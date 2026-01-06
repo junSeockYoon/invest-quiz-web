@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 카드 배경 효과 */
+        .card-bg {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* 아이콘 애니메이션 */
+        @keyframes pulse-glow {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        
+        .icon-pulse {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Container -->
+    <div class="main-content flex flex-col items-center justify-center min-h-screen px-6 py-8">
+        
+        <!-- Decorative Top Icon -->
+        <div class="mb-6 icon-pulse">
+            <div class="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center shadow-xl border-2 border-blue-100">
+                <span class="text-4xl">📊</span>
+            </div>
+        </div>
+        
+        <!-- Header Section with Card -->
+        <header class="text-center mb-10 w-full card-bg rounded-3xl p-8 shadow-xl border border-gray-200/50">
+            <div class="inline-block mb-4">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 py-2 rounded-full text-xs font-bold mb-3">
+                    INVESTMENT INTELLIGENCE
+                </div>
+            </div>
+            <h1 class="text-4xl font-extrabold bg-gradient-to-r from-blue-800 to-indigo-700 bg-clip-text text-transparent mb-4">
+                CQ LEVEL TEST
+            </h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full mb-4"></div>
+            <p class="text-gray-700 text-base font-medium leading-relaxed">
+                당신의 투자 지능은<br>
+                <span class="text-indigo-600 font-bold text-lg">상위 몇 %</span>일까요?
+            </p>
+        </header>
+
+        <!-- Main Buttons Section -->
+        <div class="w-full space-y-4">
+            <!-- 투자 지능 테스트 하기 버튼 -->
+            <a href="/test" class="block w-full">
+                <div class="relative overflow-hidden rounded-2xl shadow-2xl group">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <button class="relative w-full py-5 px-6 text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-3 transform group-hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                        <span class="text-2xl">🚀</span>
+                        <span>투자 지능 테스트 하기</span>
+                        <span class="text-xl">→</span>
+                    </button>
+                </div>
+            </a>
+
+            <!-- 모의투자 하기 버튼 (준비 중) -->
+            <div class="relative">
+                <button 
+                    disabled 
+                    class="w-full py-5 px-6 bg-gray-200 text-gray-400 font-semibold rounded-2xl shadow-lg cursor-not-allowed flex items-center justify-center gap-2 text-lg border-2 border-gray-300"
+                >
+                    <span>💼</span>
+                    <span>모의투자 하기</span>
+                    <span class="text-sm">(준비 중)</span>
+                    <span class="text-xl">🔒</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Bottom Decorative Elements -->
+        <div class="mt-12 flex gap-3">
+            <div class="w-2 h-2 bg-blue-400/40 rounded-full"></div>
+            <div class="w-2 h-2 bg-blue-500/60 rounded-full"></div>
+            <div class="w-2 h-2 bg-blue-400/40 rounded-full"></div>
+        </div>
+        
+        <!-- Footer Info -->
+        <p class="mt-6 text-gray-600 text-xs text-center">
+            정확한 투자 지능 측정을 위한 테스트
+        </p>
+
+    </div>
+</body>
+</html>

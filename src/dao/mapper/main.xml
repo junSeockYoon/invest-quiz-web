@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="main">
+
+    <select id="index">
+        SELECT * FROM posts WHERE USE_YN = 'Y' ORDER BY CREATE_DT DESC
+    </select>
+
+    <select id="detail">
+        SELECT * FROM posts WHERE ID = #{id}
+    </select>
+
+    <update id="update">
+        UPDATE posts 
+        SET TITLE = #{title}, 
+            CONTENT = #{content}, 
+            MODIFY_DATE = NOW()
+        WHERE ID = #{id}
+    </update>
+
+    <delete id="delete">
+        UPDATE posts 
+        SET USE_YN = 'N', 
+            MODIFY_DATE = NOW()
+        WHERE ID = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test - 퀴즈</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 버튼 호버 효과 */
+        .quiz-button {
+            transition: all 0.2s ease;
+        }
+        
+        .quiz-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .quiz-button:active {
+            transform: translateY(0);
+        }
+        
+        /* 진행 바 애니메이션 */
+        @keyframes progress {
+            from { width: 0%; }
+        }
+        
+        .progress-bar {
+            animation: progress 0.5s ease-out;
+        }
+        
+        /* 다음 문제로 넘어가는 페이드 효과 */
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Container -->
+    <div class="main-content flex flex-col min-h-screen px-6 py-6">
+        
+        <!-- 1. 상단 정보 영역 (Chapter Info) -->
+        <header class="mb-6">
+            <!-- 진행률 표시: 슬림한 Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-4 overflow-hidden">
+                <div id="progress-bar" class="progress-bar h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full" style="width: 1.79%"></div>
+            </div>
+            
+            <!-- 챕터 타이틀 -->
+            <h1 id="chapter-title" class="text-lg font-bold text-gray-800 mb-2">
+                [제 1장] 환율
+            </h1>
+            
+            <!-- 챕터 설명 -->
+            <p id="chapter-description" class="text-sm text-gray-500 leading-relaxed">
+                경제의 온도를 조절하는 '돈의 가격'입니다
+            </p>
+        </header>
+
+        <!-- 2. 메인 질문 영역 (Question Card) -->
+        <div id="question-card" class="bg-white rounded-2xl p-8 shadow-md mb-8 flex-1 flex flex-col justify-center min-h-[200px]">
+            <div class="text-center">
+                <!-- 질문 내용 -->
+                <h2 id="question-text" class="text-xl font-semibold text-gray-800 leading-relaxed">
+                    원/달러 환율이 상승하면 한국 수출 기업의 경쟁력이 향상됩니다.
+                </h2>
+            </div>
+        </div>
+
+        <!-- 3. 하단 인터렉션 (Buttons) -->
+        <div class="space-y-3 mb-6">
+            <!-- O 버튼: 파란색 계열 -->
+            <button 
+                id="btn-o" 
+                class="quiz-button w-full py-5 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg rounded-xl shadow-md flex items-center justify-center gap-3"
+                onclick="selectAnswer('O')"
+            >
+                <span class="text-2xl font-bold">O</span>
+                <span>정답</span>
+            </button>
+
+            <!-- X 버튼: 빨간색 계열 -->
+            <button 
+                id="btn-x" 
+                class="quiz-button w-full py-5 px-6 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-xl shadow-md flex items-center justify-center gap-3"
+                onclick="selectAnswer('X')"
+            >
+                <span class="text-2xl font-bold">X</span>
+                <span>오답</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- 서버에서 전달받은 데이터를 JavaScript로 전달 -->
+    <script>
+        // 서버에서 전달받은 퀴즈 데이터
+        var serverQuizData = [];
+        <% if (result && result.dataset && result.dataset.data) { %>
+        serverQuizData = <%- JSON.stringify(result.dataset.data) %>;
+        <% } else { %>
+        console.error('퀴즈 데이터를 불러올 수 없습니다.');
+        <% } %>
+    </script>
+
+    <!-- 퀴즈 JavaScript 파일 -->
+    <script src="/js/quiz.js"></script>
+
+    <!-- 퀴즈 초기화 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (serverQuizData && serverQuizData.length > 0) {
+                initQuiz(serverQuizData);
+            } else {
+                console.error('퀴즈 데이터가 없습니다.');
+                alert('퀴즈 데이터를 불러올 수 없습니다.');
+            }
+        });
+    </script>
+</body>
+</html>

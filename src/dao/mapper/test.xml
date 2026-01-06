@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="test">
+
+    <select id="main">
+        SELECT 
+            q.question_num, 
+            q.content, 
+            q.answer, 
+            c.title AS chapter_title, 
+            c.description AS chapter_description
+        FROM questions q
+        JOIN chapters c ON q.chapter_id = c.id
+        ORDER BY q.question_num ASC
+    </select>
+
+    <!-- 마지막 유저 번호 조회 -->
+    <select id="getLastUserNumber" resultType="int">
+        SELECT COALESCE(MAX(CAST(SUBSTRING(user_name, 6) AS UNSIGNED)), 0) AS last_number
+        FROM test_results
+        WHERE user_name LIKE 'USER_%'
+    </select>
+
+    <!-- 퀴즈 결과 저장 -->
+    <insert id="insertResult" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO test_results (user_name, total_score, grade)
+        VALUES (#{userName}, #{totalScore}, #{grade})
+    </insert>
+
+    <!-- 퀴즈 상세 결과 저장 (단일) -->
+    <insert id="insertDetail">
+        INSERT INTO test_details (result_id, question_num, user_answer, is_correct)
+        VALUES (#{resultId}, #{questionNum}, #{userAnswer}, #{isCorrect})
+    </insert>
+
+    <!-- 퀴즈 결과 조회 -->
+    <select id="getResult">
+        SELECT 
+            id,
+            user_name AS userName,
+            total_score AS totalScore,
+            grade,
+            created_at AS createdAt
+        FROM test_results
+        WHERE id = #{id}
+    </select>
+
+    <!-- 퀴즈 상세 결과 조회 -->
+    <select id="getResultDetails">
+        SELECT 
+            question_num AS questionNum,
+            user_answer AS userAnswer,
+            is_correct AS isCorrect
+        FROM test_details
+        WHERE result_id = #{resultId}
+        ORDER BY question_num ASC
+    </select>
+
+</mapper>
