@@ -1,230 +1,191 @@
-# 📖 한우리 다이어리 (Hanwoori Diary)
+## 📊 CQ Level Test (Investment Quiz for Web)
 
-한우리 다이어리는 Node.js와 Express를 기반으로 한 웹 기반 다이어리 애플리케이션입니다. 사용자는 일기를 작성, 조회, 수정, 삭제할 수 있으며, 로그인 기능을 통해 사용자 정보를 확인할 수 있습니다.
+투자 지능을 OX 퀴즈로 측정하는 **CQ(Level of Investment Intelligence) 테스트 웹 애플리케이션**입니다.  
+사용자는 연속된 OX 문제를 풀고, 최종 점수와 등급(S ~ D)을 결과 화면에서 확인할 수 있습니다.
+
+이 프로젝트는 로컬에서 개발·실행한 코드를 원격 저장소  
+[`junSeockYoon/invest-quiz-web`](https://github.com/junSeockYoon/invest-quiz-web.git)에 연동하여 사용하는 것을 기준으로 합니다.
+
+---
 
 ## ✨ 주요 기능
 
-- 📝 **다이어리 관리**: 일기 작성, 조회, 수정, 삭제
-- 🔍 **사용자 조회**: 로그인 시 사용자 타입 정보 확인
-- 📊 **목록 조회**: 작성된 모든 다이어리 목록 확인
-- 🔍 **상세 보기**: 개별 다이어리 상세 내용 확인
-- ✏️ **실시간 수정**: AJAX를 통한 비동기 수정 기능
-- 🗑️ **삭제 기능**: 다이어리 삭제 기능
+- **메인 랜딩 페이지**
+  - 모바일 감성의 단일 페이지 UI
+  - `투자 지능 테스트 하기` 버튼을 통해 퀴즈로 이동
+- **투자 지능 OX 퀴즈**
+  - 서버에서 가져온 문제 리스트를 기반으로 순차 진행
+  - 챕터(환율, 금리, 인플레이션 등) 정보와 설명 표시
+  - 진행률(progress bar) 애니메이션 및 부드러운 전환 효과
+- **결과 저장 및 등급 산출**
+  - 사용자의 OX 선택을 바탕으로 총 정답 수 계산 (최대 56문항 기준)
+  - 정답 수에 따라 **S, A, B, C, D 등급** 산출
+  - 결과 요약(점수, 정답률, 등급)과 테스트 일시, 가상의 사용자명 저장
+- **결과 조회 페이지**
+  - `/test/result/:id` URL로 특정 결과를 조회
+  - 점수/정답률/등급별 색상, 게이지 바, 등급 기준 설명 제공
+- **로그 관리**
+  - `winston`, `winston-daily-rotate-file`을 이용한 일별 로그 관리
+  - `logs/info`, `logs/error` 디렉터리에 로그 파일 기록
+
+---
 
 ## 🛠️ 기술 스택
 
 ### Backend
-- **Node.js** - JavaScript 런타임
-- **Express.js** - 웹 프레임워크
-- **MySQL** - 관계형 데이터베이스
-- **MyBatis Mapper** - SQL 매핑 프레임워크
+- **Node.js / Express.js** – 웹 서버 및 라우팅
+- **MySQL** – 퀴즈/결과 데이터 저장
+- **mybatis-mapper** – XML 기반 SQL 매퍼
+- **winston** – 로깅
 
 ### Frontend
-- **EJS** - 템플릿 엔진
-- **JavaScript (Vanilla)** - 클라이언트 사이드 스크립팅
-- **AJAX** - 비동기 통신
+- **EJS** – 서버 사이드 템플릿
+- **Vanilla JavaScript** – 퀴즈 로직 (`public/js/quiz.js`)
+- **Tailwind CSS (CDN)** – 모바일 앱 느낌의 UI 스타일링
+
+---
 
 ## 📁 프로젝트 구조
 
-```
-diary-for-web/
-├── app.js                 # Express 애플리케이션 진입점
-├── package.json           # 프로젝트 의존성 및 스크립트
+프로젝트 루트는 `investment-quiz-for-web/`입니다.
+
+```text
+investment-quiz-for-web/
+├── app.js                  # Express 앱 엔트리 포인트 (포트: 3001)
+├── package.json            # 의존성 및 실행 스크립트
+├── public/
+│   └── js/
+│       └── quiz.js         # 클라이언트 퀴즈 로직
 ├── src/
+│   ├── common/
+│   │   └── utils/          # 공통 유틸 (날짜, 암호화, 세션 등)
 │   ├── config/
-│   │   └── database.js    # 데이터베이스 연결 설정
-│   ├── controllers/       # 컨트롤러 계층
-│   │   ├── auth.controller.js
-│   │   └── main.controller.js
-│   ├── services/          # 서비스 계층 (비즈니스 로직)
-│   │   ├── auth.services.js
-│   │   ├── main.services.js
-│   │   └── index.js
-│   ├── dao/               # 데이터 접근 계층
-│   │   ├── common.dao.js
+│   │   ├── app.config.js   # 앱 공통 설정
+│   │   ├── color.config.js # 색상 관련 설정
+│   │   ├── database.js     # DB 연결 설정
+│   │   └── logger.js       # winston 로거 설정
+│   ├── controllers/
+│   │   ├── main.controller.js  # 메인 랜딩 페이지 컨트롤러
+│   │   └── test.controller.js  # 퀴즈/결과 컨트롤러
+│   ├── services/
+│   │   ├── index.js        # 서비스 인덱스
+│   │   ├── main.services.js# (기존 예제용 서비스 – 필요시 확장)
+│   │   └── test.services.js# 퀴즈 로직 및 결과 저장/조회 서비스
+│   ├── dao/
+│   │   ├── common.dao.js   # 공통 DAO 호출 래퍼
 │   │   └── mapper/
-│   │       ├── auth.xml
-│   │       └── main.xml
-│   └── routes/            # 라우팅 설정
-│       ├── index.js
-│       ├── auth.route.js
-│       └── main.route.js
-└── view/                  # EJS 템플릿 파일
-    ├── auth/
-    │   └── login.ejs
-    ├── main.ejs
-    └── detail.ejs
+│   │       ├── main.xml    # 예제용 쿼리 매퍼
+│   │       └── test.xml    # 퀴즈/결과 관련 쿼리 매퍼
+│   ├── models/
+│   │   └── common/         # 결과 모델(ResultModel 등)
+│   └── routes/
+│       ├── index.js        # 라우트 엔트리 (/, /test 등 등록)
+│       ├── main.route.js   # 메인 페이지 라우트
+│       └── test.route.js   # 퀴즈/결과 라우트
+└── view/
+    ├── main.ejs            # 메인 랜딩 페이지 (CQ LEVEL TEST)
+    └── test/
+        ├── main.ejs        # 퀴즈 화면
+        └── result.ejs      # 결과 화면
 ```
+
+---
 
 ## 🚀 시작하기
 
-### 필수 요구사항
+### 1. 필수 요구사항
 
-- Node.js (v14 이상)
-- MySQL (v8.0 이상)
-- npm 또는 yarn
+- Node.js (v14 이상 권장)
+- MySQL (v8.0 이상 권장)
+- npm
 
-### 설치 방법
+### 2. 프로젝트 클론
 
-1. **저장소 클론**
-   ```bash
-   git clone https://github.com/junSeockYoon/hanwori-diary-for-web.git
-   cd hanwori-diary-for-web
-   ```
-
-2. **의존성 설치**
-   ```bash
-   npm install
-   ```
-
-3. **데이터베이스 설정**
-   - MySQL 데이터베이스 생성 및 테이블 생성 (아래 "데이터베이스 스키마" 섹션 참조)
-   - `src/config/database.js` 파일에서 데이터베이스 연결 정보 설정
-   ```javascript
-   // src/config/database.js 예시
-   host: 'localhost',
-   user: 'your_username',
-   password: 'your_password',
-   database: 'diary_db'
-   ```
-
-4. **서버 실행**
-   ```bash
-   # 개발 모드 (nodemon 사용)
-   npm run dev
-   
-   # 프로덕션 모드
-   npm start
-   ```
-
-5. **브라우저에서 접속**
-   ```
-   http://localhost:3001
-   ```
-
-## 📝 API 엔드포인트
-
-### 인증 (Auth)
-- `GET /auth/login` - 로그인 페이지 렌더링
-- `POST /auth/api/login` - 사용자 정보 조회 (아이디와 비밀번호로 사용자 타입 확인)
-
-### 다이어리 (Main)
-- `GET /` - 다이어리 목록 페이지
-- `GET /detail/:id` - 다이어리 상세 페이지
-- `POST /update/:id` - 다이어리 수정
-- `POST /delete/:id` - 다이어리 삭제
-
-## 🗄️ 데이터베이스 스키마
-
-### 데이터베이스 생성
-
-```sql
-CREATE DATABASE diary_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE diary_db;
+```bash
+git clone https://github.com/junSeockYoon/invest-quiz-web.git
+cd invest-quiz-web
 ```
 
-### users 테이블
+> GitHub 저장소는 현재 비어 있을 수 있지만, 로컬 프로젝트를 위 경로와 연동해서 사용하면 됩니다.  
+> (로컬에서 작업 후 `git remote add origin` 및 `git push`로 업로드)
 
-사용자 정보를 저장하는 테이블입니다.
+### 3. 의존성 설치
 
-```sql
-CREATE TABLE `users` (
-  `user_cd` INT NOT NULL AUTO_INCREMENT COMMENT '유저 고유 코드 (PK)',
-  `user_id` VARCHAR(50) NOT NULL UNIQUE COMMENT '유저 로그인 아이디',
-  `pw` VARCHAR(255) NOT NULL COMMENT '비밀번호 (반드시 해시하여 저장)',
-  `user_type` VARCHAR(20) DEFAULT 'user' COMMENT '유저 타입 (예: admin, user)',
-  `use_yn` CHAR(1) DEFAULT 'Y' COMMENT '사용 여부 (Y/N, N=탈퇴 처리)',
-  `create_dt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
-  `modify_dt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
-  PRIMARY KEY (`user_cd`),
-  UNIQUE KEY `UK_user_id` (`user_id`)
-) COMMENT '유저 정보 테이블';
+```bash
+npm install
 ```
 
-### posts 테이블
+### 4. 데이터베이스 설정
 
-다이어리 게시글 정보를 저장하는 테이블입니다.
+1. MySQL에 데이터베이스 생성
+2. 퀴즈 문제/결과/결과 상세를 저장할 테이블을 생성  
+   (구체적인 DDL은 `src/dao/mapper/test.xml`에 정의된 쿼리를 참고해 구성)
+3. `src/config/database.js` 파일에서 DB 접속 정보를 실제 환경에 맞게 수정
 
-```sql
-CREATE TABLE `posts` (
-  `id` INT NOT NULL AUTO_INCREMENT COMMENT '게시글 고유 코드 (PK)',
-  `title` VARCHAR(255) NOT NULL COMMENT '게시글 제목',
-  `content` TEXT NOT NULL COMMENT '게시글 내용',
-  `use_yn` CHAR(1) DEFAULT 'Y' COMMENT '사용 여부 (Y/N, N=삭제 처리)',
-  `create_dt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
-  `modify_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
-  PRIMARY KEY (`id`)
-) COMMENT '게시글 정보 테이블';
+```js
+// src/config/database.js 예시
+host: 'localhost',
+user: 'your_username',
+password: 'your_password',
+database: 'investment_quiz_db'
 ```
 
-### 샘플 데이터 INSERT
+### 5. 서버 실행
 
-#### users 테이블 샘플 데이터
+```bash
+# 개발 모드 (nodemon 사용)
+npm run dev
 
-```sql
--- 관리자 계정 (비밀번호는 실제 사용 시 bcrypt로 해시하여 저장해야 합니다)
-INSERT INTO `users` (`user_id`, `pw`, `user_type`, `use_yn`) 
-VALUES ('admin', '$2b$10$YourHashedPasswordHere', 'admin', 'Y');
-
--- 일반 사용자 계정
-INSERT INTO `users` (`user_id`, `pw`, `user_type`, `use_yn`) 
-VALUES ('user01', '$2b$10$YourHashedPasswordHere', 'user', 'Y');
+# 프로덕션 모드
+npm start
 ```
 
-**주의**: 위의 `$2b$10$YourHashedPasswordHere`는 예시입니다. 실제로는 bcrypt를 사용하여 비밀번호를 해시한 값을 저장해야 합니다.
+브라우저에서 아래 주소로 접속합니다.
 
-#### posts 테이블 샘플 데이터
-
-```sql
--- 샘플 다이어리 게시글
-INSERT INTO `posts` (`title`, `content`, `use_yn`) 
-VALUES ('오늘의 일기', '오늘은 날씨가 좋았다. 산책을 다녀왔다.', 'Y');
-
-INSERT INTO `posts` (`title`, `content`, `use_yn`) 
-VALUES ('주말 계획', '이번 주말에는 책을 읽고 영화를 보려고 한다.', 'Y');
-
-INSERT INTO `posts` (`title`, `content`, `use_yn`) 
-VALUES ('새로운 시작', '새로운 프로젝트를 시작했다. 기대가 된다!', 'Y');
+```text
+http://localhost:3001
 ```
 
-### 비밀번호 해시 생성 방법
+---
 
-Node.js에서 bcrypt를 사용하여 비밀번호를 해시하는 방법:
+## 📝 주요 라우트 / API
 
-```javascript
-const bcrypt = require('bcrypt');
+### View 라우트
 
-// 비밀번호 해시 생성
-const plainPassword = 'your_password_here';
-const saltRounds = 10;
+- `GET /`
+  - 메인 랜딩 페이지(`view/main.ejs`) 렌더링
+  - CQ LEVEL TEST 소개 및 "투자 지능 테스트 하기" 버튼 제공
 
-bcrypt.hash(plainPassword, saltRounds, (err, hash) => {
-    if (err) {
-        console.error('해시 생성 오류:', err);
-        return;
-    }
-    console.log('해시된 비밀번호:', hash);
-    // 이 해시 값을 데이터베이스에 저장하세요
-});
-```
+- `GET /test`
+  - 퀴즈 페이지(`view/test/main.ejs`) 렌더링
+  - 서버에서 조회한 퀴즈 데이터(`testService.main()`)를 `serverQuizData`로 주입
 
-## 🔐 로그인 기능
+- `GET /test/result/:id`
+  - 특정 결과 ID에 대한 결과 페이지(`view/test/result.ejs`) 렌더링
+  - 점수, 등급, 정답률, 테스트 날짜 등 표시
 
-현재 구현된 로그인 기능은 다음과 같습니다:
+### API 라우트
 
-- **로그인 페이지**: 사용자가 아이디와 비밀번호를 입력할 수 있는 페이지 제공
-- **사용자 정보 조회**: 입력된 아이디와 비밀번호로 데이터베이스에서 사용자 타입(`user_type`)을 조회
-- **응답**: 조회된 사용자 정보를 JSON 형태로 반환
+- `POST /test/submit`
+  - Body(JSON):
+    - `totalScore`: 정답 개수
+    - `grade`: 산출된 등급(S/A/B/C/D)
+    - `details[]`: 각 문항별 `{ questionNum, userAnswer, isCorrect }`
+  - 동작:
+    - 마지막 유저 번호 조회 후 `USER_번호` 형식의 사용자명 생성
+    - 결과 및 상세 결과를 DB에 저장
+    - 성공 시 `resultId`, `userName`을 포함한 JSON 반환
 
-**참고**: 현재는 세션 관리나 인증 미들웨어가 구현되지 않아, 로그인 후에도 모든 페이지에 접근 가능합니다. 향후 세션 기반 인증이나 JWT 토큰 기반 인증을 추가할 수 있습니다.
+---
 
 ## 🎨 UI/UX 특징
 
-- 모던하고 깔끔한 디자인
-- 반응형 레이아웃
-- 직관적인 사용자 인터페이스
-- 실시간 피드백 메시지
-- 로그인 페이지 디자인
+- 모바일 화면 기준으로 디자인된 단일 페이지 구조
+- Tailwind CSS를 통한 **모던하고 부드러운 인터랙션**
+- 진행 바 애니메이션, 페이드 인/아웃 전환 효과
+- 등급별 색상(보라/파랑/초록/주황/빨강)로 시각적 구분
+
+---
 
 ## 📦 주요 의존성
 
@@ -233,39 +194,37 @@ bcrypt.hash(plainPassword, saltRounds, (err, hash) => {
   "ejs": "^3.1.10",
   "express": "^5.1.0",
   "mybatis-mapper": "^0.8.0",
-  "mysql2": "^3.14.5"
+  "mysql2": "^3.14.5",
+  "winston": "^3.11.0"
 }
 ```
 
-## 🏗️ 아키텍처
-
-이 프로젝트는 **MVC (Model-View-Controller)** 패턴을 따릅니다:
-
-- **Model**: DAO 계층 (데이터베이스 접근)
-- **View**: EJS 템플릿 (사용자 인터페이스)
-- **Controller**: 컨트롤러 계층 (요청 처리)
-- **Service**: 서비스 계층 (비즈니스 로직)
-
-## 🔄 데이터 흐름
-
-1. **요청**: 클라이언트가 라우터를 통해 요청
-2. **컨트롤러**: 요청을 받아 서비스 계층 호출
-3. **서비스**: 비즈니스 로직 처리 후 DAO 호출
-4. **DAO**: MyBatis Mapper를 통해 SQL 실행
-5. **응답**: 결과를 컨트롤러 → 뷰 또는 JSON으로 반환
-
-## 📄 라이선스
-
-이 프로젝트는 ISC 라이선스를 따릅니다.
-
-## 👤 작성자
-
-- **junSeockYoon** - [GitHub](https://github.com/junSeockYoon)
-
-## 🙏 감사의 말
-
-이 프로젝트를 사용해주셔서 감사합니다!
+그 외에도 `bcrypt`, `cookie-parser`, `lodash`, `moment`, `uuid`, `winston-daily-rotate-file` 등을 사용하여 확장 가능한 구조를 갖추고 있습니다.
 
 ---
 
-**Made with ❤️ by junSeockYoon**
+## 🏗️ 아키텍처 & 데이터 흐름
+
+이 프로젝트는 **MVC + Service + DAO 레이어드 아키텍처**를 따릅니다.
+
+- **Controller**: 요청을 받고 서비스 호출 (`src/controllers`)
+- **Service**: 비즈니스 로직 및 DAO 호출 (`src/services`)
+- **DAO**: `commonDao` + MyBatis 스타일 XML 매퍼 (`src/dao`)
+- **View**: EJS 템플릿 렌더링 (`view`)
+
+데이터 흐름:
+1. 사용자가 `/test` 진입 → 서버에서 퀴즈 데이터 조회 후 EJS에 주입
+2. 클라이언트에서 OX 선택 → `quiz.js`가 결과를 집계
+3. `POST /test/submit`으로 결과 전송 → DB 저장 → `resultId` 반환
+4. 클라이언트는 `/test/result/:id`로 리다이렉트 → 결과 화면 렌더링
+
+---
+
+## 📄 라이선스 & 작성자
+
+- 라이선스: ISC
+- 작성자: **junSeockYoon** – [GitHub 프로필](https://github.com/junSeockYoon)
+
+---
+
+**Made with ❤️ for CQ Level Test (Investment Quiz for Web)** by **junSeockYoon**
