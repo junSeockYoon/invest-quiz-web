@@ -37,12 +37,18 @@ const submitResult = async (resultData) => {
         }
 
         // 퀴즈 상세 결과 저장 (각 detail을 개별적으로 저장)
-        for (const detail of resultData.details) {
+        for (const detail of resultData.details || []) {
+            // detail 이 null/undefined 이거나 questionNum 이 없으면 스킵
+            if (!detail || detail.questionNum == null) {
+                continue;
+            }
+
             await commonDao(mapper.TEST, 'insertDetail', {
                 resultId: resultId,
                 questionNum: detail.questionNum,
                 userAnswer: detail.userAnswer,
-                isCorrect: detail.isCorrect
+                isCorrect: detail.isCorrect,
+                responseTimeMs: detail.responseTimeMs || 0
             });
         }
 

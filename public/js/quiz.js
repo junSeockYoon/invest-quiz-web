@@ -7,7 +7,9 @@ let quizData = {
     questions: [],
     currentIndex: 0,
     answers: [], // 사용자가 선택한 답변 저장
-    totalQuestions: 0
+    totalQuestions: 0,
+    startTime: null, // 퀴즈 시작 시각
+    questionStartTime: null // 현재 문항 시작 시각
 };
 
 /**
@@ -24,6 +26,8 @@ function initQuiz(questions) {
     quizData.totalQuestions = questions.length;
     quizData.currentIndex = 0;
     quizData.answers = [];
+    quizData.startTime = Date.now(); // 전체 퀴즈 시작 시간 기록
+    quizData.questionStartTime = null;
 
     // 첫 번째 질문 표시
     displayQuestion(0);
@@ -41,6 +45,9 @@ function displayQuestion(index) {
 
     const question = quizData.questions[index];
     
+    // 현재 문항 시작 시각 기록
+    quizData.questionStartTime = Date.now();
+
     // 질문 텍스트 업데이트
     document.getElementById('question-text').textContent = question.content;
     
@@ -92,13 +99,21 @@ function updateProgress(index) {
  */
 function selectAnswer(answer) {
     const currentQuestion = quizData.questions[quizData.currentIndex];
-    
+
+    // 현재 문항 응답 시간(ms) 계산
+    const now = Date.now();
+    let responseTimeMs = 0;
+    if (quizData.questionStartTime) {
+        responseTimeMs = now - quizData.questionStartTime;
+    }
+
     // 답변 저장
     quizData.answers[quizData.currentIndex] = {
         questionNum: currentQuestion.questionNum,
         userAnswer: answer,
         correctAnswer: currentQuestion.answer,
-        isCorrect: answer === currentQuestion.answer
+        isCorrect: answer === currentQuestion.answer,
+        responseTimeMs: responseTimeMs
     };
     
     // 선택된 버튼 시각적 피드백
@@ -173,20 +188,30 @@ function calculateGrade(score) {
  */
 async function completeQuiz() {
     // 정답 개수 계산
-    const correctCount = quizData.answers.filter(answer => answer.isCorrect).length;
-    const totalCount = quizData.answers.length;
+    const correctCount = quizData.answers.filter(answer => answer && answer.isCorrect).length;
+    const totalCount = quizData.answers.filter(answer => !!answer).length;
     const score = Math.round((correctCount / totalCount) * 100);
     const grade = calculateGrade(correctCount);
+
+    // 소요 시간 계산 (초 단위)
+    const endTime = Date.now();
+    const elapsedMs = quizData.startTime ? (endTime - quizData.startTime) : 0;
+    const elapsedSeconds = Math.round(elapsedMs / 1000);
     
     // 결과 데이터 준비
     const resultData = {
         totalScore: correctCount,
         grade: grade,
-        details: quizData.answers.map(answer => ({
-            questionNum: answer.questionNum,
-            userAnswer: answer.userAnswer,
-            isCorrect: answer.isCorrect ? 1 : 0
-        }))
+        elapsedSeconds: elapsedSeconds, // 퀴즈 풀이 소요 시간(초)
+        // 비어 있거나 세팅되지 않은 답변은 제외
+        details: quizData.answers
+            .filter(answer => !!answer)
+            .map(answer => ({
+                questionNum: answer.questionNum,
+                userAnswer: answer.userAnswer,
+                isCorrect: answer.isCorrect ? 1 : 0,
+                responseTimeMs: answer.responseTimeMs || 0
+            }))
     };
     
     try {
@@ -208,7 +233,12 @@ async function completeQuiz() {
             if (resultId) {
                 window.location.href = `/test/result/${resultId}`;
             } else {
-                alert(`퀴즈 완료!\n정답: ${correctCount}/${totalCount} (${score}%)\n등급: ${grade}`);
+                alert(
+                    `퀴즈 완료!\n` +
+                    `정답: ${correctCount}/${totalCount} (${score}%)\n` +
+                    `등급: ${grade}\n` +
+                    `소요 시간: ${elapsedSeconds}초`
+                );
             }
         } else {
             alert('결과 저장 중 오류가 발생했습니다.');

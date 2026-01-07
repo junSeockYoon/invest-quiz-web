@@ -30,8 +30,8 @@
 
     <!-- 퀴즈 상세 결과 저장 (단일) -->
     <insert id="insertDetail">
-        INSERT INTO test_details (result_id, question_num, user_answer, is_correct)
-        VALUES (#{resultId}, #{questionNum}, #{userAnswer}, #{isCorrect})
+        INSERT INTO test_details (result_id, question_num, user_answer, is_correct, response_time_ms)
+        VALUES (#{resultId}, #{questionNum}, #{userAnswer}, #{isCorrect}, #{responseTimeMs})
     </insert>
 
     <!-- 퀴즈 결과 조회 -->
