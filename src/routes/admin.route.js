@@ -9,6 +9,8 @@ const router = express.Router();
  ****************************************************************************************/
 router.get('/', adminController.dashboard);
 router.get('/results', adminController.resultList);
+router.get('/level-results', adminController.levelResultList);
+router.get('/level-results/:id', adminController.levelResultDetail);
 
 /****************************************************************************************
  *!                                     A P I

@@ -21,6 +21,9 @@
                 <a href="/admin/results" class="block px-3 py-2 rounded-lg bg-gray-800 text-sm font-medium">
                     퀴즈 결과 리스트
                 </a>
+                <a href="/admin/level-results" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    레벨 테스트 결과 리스트
+                </a>
                 <a href="/test/chapters" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
                     사용자 퀴즈 화면 열기
                 </a>
@@ -91,6 +94,7 @@
                                 <th class="px-4 py-2">챕터</th>
                                 <th class="px-4 py-2">점수</th>
                                 <th class="px-4 py-2">응시일시</th>
+                                <th class="px-4 py-2 text-center">상세</th>
                             </tr>
                         </thead>
                         <tbody id="result-table-body" class="divide-y divide-gray-100">
@@ -107,6 +111,65 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Detail Modal -->
+            <div id="result-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-show">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">퀴즈 결과 상세</h3>
+                        <button
+                            type="button"
+                            class="text-gray-400 hover:text-gray-600"
+                            onclick="closeResultDetail()"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-gray-500">결과 ID</div>
+                                <div id="detail-id" class="font-semibold text-gray-800">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">사용자</div>
+                                <div id="detail-user" class="font-semibold text-gray-800">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">챕터</div>
+                                <div id="detail-chapter" class="font-semibold text-gray-800">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">응시일시</div>
+                                <div id="detail-date" class="font-semibold text-gray-800">-</div>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-100 pt-4 grid grid-cols-3 gap-4">
+                            <div>
+                                <div class="text-gray-500">점수</div>
+                                <div id="detail-score" class="font-semibold text-blue-600">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">총 문항 수(가정)</div>
+                                <div id="detail-total-questions" class="font-semibold text-gray-800">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">정답률(가정)</div>
+                                <div id="detail-accuracy" class="font-semibold text-green-600">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button
+                            type="button"
+                            class="inline-flex items-center px-4 py-2 rounded-md bg-gray-800 text-white text-sm font-medium hover:bg-gray-900"
+                            onclick="closeResultDetail()"
+                        >
+                            닫기
+                        </button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script>
@@ -165,7 +228,7 @@
             totalCountEl.textContent = `총 ${total}건`;
 
             if (!pageItems.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">결과가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">결과가 없습니다.</td></tr>';
                 return;
             }
 
@@ -176,6 +239,14 @@
                     <td class="px-4 py-2 text-gray-700">${item.chapterTitle}</td>
                     <td class="px-4 py-2 text-gray-700">${item.totalScore}</td>
                     <td class="px-4 py-2 text-gray-500 text-xs">${formatDate(item.createdAt)}</td>
+                    <td class="px-4 py-2 text-center">
+                        <button
+                            class="inline-flex items-center px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-700 hover:bg-gray-100"
+                            onclick="openResultDetail(${item.id})"
+                        >
+                            상세 보기
+                        </button>
+                    </td>
                 </tr>
             `).join('');
 
@@ -237,6 +308,33 @@
                     renderTable();
                 });
             });
+        }
+
+        function openResultDetail(id) {
+            const modal = document.getElementById('result-detail-modal');
+            const result = mockResults.find(r => r.id === id);
+
+            if (!result) return;
+
+            const totalQuestions = 5; // 퍼블리싱용 가정 값
+            const accuracy = totalQuestions > 0 ? Math.round((result.totalScore / totalQuestions) * 100) : 0;
+
+            document.getElementById('detail-id').textContent = result.id;
+            document.getElementById('detail-user').textContent = result.userName;
+            document.getElementById('detail-chapter').textContent = result.chapterTitle;
+            document.getElementById('detail-date').textContent = formatDate(result.createdAt);
+            document.getElementById('detail-score').textContent = `${result.totalScore} 점`;
+            document.getElementById('detail-total-questions').textContent = `${totalQuestions}문항`;
+            document.getElementById('detail-accuracy').textContent = `${accuracy}%`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResultDetail() {
+            const modal = document.getElementById('result-detail-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         document.addEventListener('DOMContentLoaded', () => {

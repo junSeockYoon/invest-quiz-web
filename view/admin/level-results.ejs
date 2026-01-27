@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>레벨 테스트 결과 리스트 - 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-gray-100 flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold">관리자</h1>
+                <p class="text-sm text-gray-400 mt-1">CQ Level Test</p>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">메뉴</div>
+                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    대시보드
+                </a>
+                <a href="/admin/results" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    퀴즈 결과 리스트
+                </a>
+                <a href="/admin/level-results" class="block px-3 py-2 rounded-lg bg-gray-800 text-sm font-medium">
+                    레벨 테스트 결과 리스트
+                </a>
+            </nav>
+            <div class="px-6 py-4 border-t border-gray-700 text-xs text-gray-500">
+                © CQ Level Test
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- Header -->
+            <header class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">레벨 테스트 결과 리스트</h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        사용자별 투자 레벨 테스트 결과를 확인할 수 있는 페이지입니다. (현재는 퍼블리싱용 더미 데이터)
+                    </p>
+                </div>
+                <div class="space-x-2">
+                    <button class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-xs font-medium">
+                        필터
+                    </button>
+                    <button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium">
+                        새로고침
+                    </button>
+                </div>
+            </header>
+
+            <!-- Result List Table -->
+            <section class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">레벨 테스트 결과 목록</h3>
+                    <span id="level-result-total-count" class="text-sm text-gray-500">총 0건</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+                                <th class="px-3 py-2">결과 ID</th>
+                                <th class="px-3 py-2">사용자</th>
+                                <th class="px-3 py-2">총 점수</th>
+                                <th class="px-3 py-2">레벨</th>
+                                <th class="px-3 py-2">Top 3 챕터</th>
+                                <th class="px-3 py-2">응시일시</th>
+                                <th class="px-3 py-2 text-center">상세</th>
+                            </tr>
+                        </thead>
+                        <tbody id="level-result-table-body" class="divide-y divide-gray-100">
+                            <!-- JavaScript에서 더미 데이터 + 페이징으로 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div id="level-pagination-container" class="mt-4 flex items-center justify-between text-[11px] text-gray-600">
+                    <div id="level-pagination-info"></div>
+                    <div class="flex items-center space-x-1" id="level-pagination-buttons">
+                        <!-- JavaScript에서 페이지 버튼 렌더링 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // 레벨 테스트 더미 데이터 (퍼블리싱용)
+        const levelMockResults = (() => {
+            const chapters = [
+                '환율', '금리', '인플레이션', '경제성장률', '경상수지',
+                '지정학적 리스크', '국가부채', '교역조건', '외국인 투자',
+                '원자재 가격', '산업별 수출입'
+            ];
+            const levels = ['S', 'A', 'B', 'C', 'D'];
+            const results = [];
+            const baseTime = new Date();
+
+            for (let i = 0; i < 25; i++) {
+                const id = 500 + i;
+                const userIdx = (i % 12) + 1;
+                const totalScore = 20 + (i % 10); // 20~29점
+                const level = levels[i % levels.length];
+                const createdAt = new Date(baseTime.getTime() - i * 1000 * 60 * 11).toISOString();
+
+                // 챕터별 맞춘 개수(간단한 가짜 데이터)
+                const chapterScores = chapters.map((ch, idx) => ({
+                    chapterKey: `CH${idx + 1}`,
+                    chapterName: ch,
+                    correctCount: (i + idx) % 6 // 0~5개
+                }));
+
+                // Top 3 챕터
+                const top3 = [...chapterScores]
+                    .sort((a, b) => b.correctCount - a.correctCount)
+                    .slice(0, 3);
+
+                results.push({
+                    id,
+                    userName: `USER_${userIdx}`,
+                    totalScore,
+                    level,
+                    createdAt,
+                    chapterScores,
+                    top3,
+                });
+            }
+            return results;
+        })();
+
+        const levelPageSize = 10;
+        let levelCurrentPage = 1;
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return iso;
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:00`;
+        }
+
+        function renderLevelResultTable() {
+            const tbody = document.getElementById('level-result-table-body');
+            const totalCountEl = document.getElementById('level-result-total-count');
+            const total = levelMockResults.length;
+            const start = (levelCurrentPage - 1) * levelPageSize;
+            const end = Math.min(start + levelPageSize, total);
+            const pageItems = levelMockResults.slice(start, end);
+
+            totalCountEl.textContent = `총 ${total}건`;
+
+            if (!pageItems.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-4 text-center text-gray-500">결과가 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = pageItems.map(item => {
+                const top3Text = item.top3
+                    .map(t => `${t.chapterName}(${t.correctCount})`)
+                    .join(', ');
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-3 py-2 text-gray-700">${item.id}</td>
+                        <td class="px-3 py-2 text-gray-700">${item.userName}</td>
+                        <td class="px-3 py-2 text-gray-700">${item.totalScore}</td>
+                        <td class="px-3 py-2 text-gray-700">${item.level}</td>
+                        <td class="px-3 py-2 text-gray-700">${top3Text}</td>
+                        <td class="px-3 py-2 text-gray-500 text-[11px]">${formatDate(item.createdAt)}</td>
+                        <td class="px-3 py-2 text-center">
+                            <a
+                                href="/admin/level-results/${item.id}"
+                                class="inline-flex items-center px-3 py-1 rounded-full border border-gray-300 text-[11px] text-gray-700 hover:bg-gray-100"
+                            >
+                                상세 보기
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderLevelPagination(total, start, end);
+        }
+
+        function renderLevelPagination(total, start, end) {
+            const infoEl = document.getElementById('level-pagination-info');
+            const buttonsEl = document.getElementById('level-pagination-buttons');
+            const totalPages = Math.max(1, Math.ceil(total / levelPageSize));
+
+            infoEl.textContent = `${start + 1}–${end} / ${total}건 (페이지 ${levelCurrentPage}/${totalPages})`;
+
+            let html = '';
+            const disabledPrev = levelCurrentPage === 1 ? 'opacity-40 cursor-default' : 'hover:bg-gray-200 cursor-pointer';
+            const disabledNext = levelCurrentPage === totalPages ? 'opacity-40 cursor-default' : 'hover:bg-gray-200 cursor-pointer';
+
+            html += `
+                <button class="px-2 py-1 rounded ${disabledPrev}" data-page="prev">이전</button>
+            `;
+
+            const maxPageButtons = 5;
+            let startPage = Math.max(1, levelCurrentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+            if (endPage - startPage < maxPageButtons - 1) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                const isActive = p === levelCurrentPage;
+                html += `
+                    <button
+                        class="px-3 py-1 rounded ${isActive ? 'bg-gray-800 text-white' : 'hover:bg-gray-200'}"
+                        data-page="${p}"
+                    >
+                        ${p}
+                    </button>
+                `;
+            }
+
+            html += `
+                <button class="px-2 py-1 rounded ${disabledNext}" data-page="next">다음</button>
+            `;
+
+            buttonsEl.innerHTML = html;
+
+            buttonsEl.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = btn.getAttribute('data-page');
+                    const totalPages = Math.max(1, Math.ceil(total / levelPageSize));
+
+                    if (val === 'prev' && levelCurrentPage > 1) {
+                        levelCurrentPage--;
+                    } else if (val === 'next' && levelCurrentPage < totalPages) {
+                        levelCurrentPage++;
+                    } else if (val !== 'prev' && val !== 'next') {
+                        levelCurrentPage = parseInt(val, 10);
+                    }
+                    renderLevelResultTable();
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLevelResultTable();
+        });
+    </script>
+</body>
+</html>
+

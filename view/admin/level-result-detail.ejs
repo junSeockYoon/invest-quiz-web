@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>레벨 테스트 결과 상세 - 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-gray-100 flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold">관리자</h1>
+                <p class="text-sm text-gray-400 mt-1">CQ Level Test</p>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">메뉴</div>
+                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    대시보드
+                </a>
+                <a href="/admin/results" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    퀴즈 결과 리스트
+                </a>
+                <a href="/admin/level-results" class="block px-3 py-2 rounded-lg bg-gray-800 text-sm font-medium">
+                    레벨 테스트 결과 리스트
+                </a>
+            </nav>
+            <div class="px-6 py-4 border-t border-gray-700 text-xs text-gray-500">
+                © CQ Level Test
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- Header -->
+            <header class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">레벨 테스트 결과 상세</h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        사용자가 각 챕터별로 몇 문제를 맞췄는지와 틀린 문제 요약을 확인할 수 있습니다. (현재는 퍼블리싱용 더미 데이터)
+                    </p>
+                </div>
+                <a href="/admin/level-results" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-xs font-medium">
+                    목록으로 돌아가기
+                </a>
+            </header>
+
+            <!-- Summary Card -->
+            <section class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-xs text-gray-500 mb-1">결과 ID</div>
+                    <div id="detail-id" class="text-xl font-bold text-gray-800"><%= resultId %></div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-xs text-gray-500 mb-1">사용자</div>
+                    <div id="detail-user" class="text-xl font-bold text-gray-800">USER_1</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-xs text-gray-500 mb-1">총 점수 / 레벨</div>
+                    <div id="detail-score-level" class="text-xl font-bold text-blue-600">27점 (A)</div>
+                </div>
+            </section>
+
+            <!-- Chapter Score Table -->
+            <section class="bg-white rounded-xl shadow p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">챕터별 정답 개수</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+                                <th class="px-3 py-2">챕터</th>
+                                <th class="px-3 py-2">맞춘 문항 수</th>
+                                <th class="px-3 py-2">총 문항 수 (예시)</th>
+                                <th class="px-3 py-2">정답률</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chapter-score-body" class="divide-y divide-gray-100">
+                            <!-- JS로 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Wrong Questions -->
+            <section class="bg-white rounded-xl shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">틀린 문제 요약 (예시)</h3>
+                <div id="wrong-questions-container" class="space-y-3 text-sm">
+                    <!-- JS로 렌더링 -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // 목록 페이지의 levelMockResults와 동일한 구조를 가정한 더미 데이터 (퍼블리싱용)
+        const levelDetailMock = (() => {
+            const chapters = [
+                '환율 (Exchange Rate)',
+                '금리 (Interest Rate)',
+                '인플레이션 (Inflation)',
+                '경제성장률 (GDP Growth)',
+                '경상수지 및 무역수지 (Balance of Trade)',
+                '지정학적 리스크',
+                '국가부채',
+                '교역조건',
+                '외국인 투자',
+                '원자재 가격',
+                '산업별 수출입'
+            ];
+
+            const chapterScores = chapters.map((name, idx) => {
+                const total = 5; // 예시: 챕터당 5문항
+                const correct = (idx * 2 + 3) % 6; // 0~5
+                return {
+                    chapterKey: `CH${idx + 1}`,
+                    chapterName: name,
+                    correctCount: correct,
+                    totalCount: total,
+                };
+            });
+
+            const wrongQuestions = [
+                {
+                    chapterName: '환율 (Exchange Rate)',
+                    questionNo: 2,
+                    questionText: '환율이 상승하면 모든 수입 물가가 항상 상승한다.',
+                    userAnswer: 'O',
+                    correctAnswer: 'X',
+                    comment: '일부 수입품은 장기계약, 환헤지 등으로 영향이 제한적일 수 있습니다.'
+                },
+                {
+                    chapterName: '인플레이션 (Inflation)',
+                    questionNo: 4,
+                    questionText: '디플레이션은 항상 소비자에게 좋은 현상이다.',
+                    userAnswer: 'O',
+                    correctAnswer: 'X',
+                    comment: '장기적인 디플레이션은 경기 침체와 실업 증가를 유발할 수 있습니다.'
+                },
+                {
+                    chapterName: '지정학적 리스크',
+                    questionNo: 1,
+                    questionText: '지정학적 리스크는 금융시장의 변동성과 무관하다.',
+                    userAnswer: 'O',
+                    correctAnswer: 'X',
+                    comment: '전쟁, 제재 등은 환율·주가·원자재 가격에 큰 영향을 줄 수 있습니다.'
+                },
+            ];
+
+            return {
+                id: <%= resultId %>,
+                userName: 'USER_1',
+                totalScore: 27,
+                level: 'A',
+                chapterScores,
+                wrongQuestions,
+            };
+        })();
+
+        function renderDetail() {
+            const d = levelDetailMock;
+
+            document.getElementById('detail-id').textContent = d.id;
+            document.getElementById('detail-user').textContent = d.userName;
+            document.getElementById('detail-score-level').textContent = `${d.totalScore}점 (${d.level})`;
+
+            // 챕터별 점수
+            const tbody = document.getElementById('chapter-score-body');
+            tbody.innerHTML = d.chapterScores.map(cs => {
+                const accuracy = cs.totalCount > 0 ? Math.round((cs.correctCount / cs.totalCount) * 100) : 0;
+                return `
+                    <tr>
+                        <td class="px-3 py-2 text-gray-700">${cs.chapterName}</td>
+                        <td class="px-3 py-2 text-gray-700">${cs.correctCount}</td>
+                        <td class="px-3 py-2 text-gray-700">${cs.totalCount}</td>
+                        <td class="px-3 py-2 text-gray-700">${accuracy}%</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 틀린 문제 요약
+            const wrongBox = document.getElementById('wrong-questions-container');
+            if (!d.wrongQuestions.length) {
+                wrongBox.innerHTML = '<p class="text-gray-500 text-sm">틀린 문제가 없습니다.</p>';
+                return;
+            }
+
+            wrongBox.innerHTML = d.wrongQuestions.map(wq => `
+                <div class="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                    <div class="flex items-center justify-between mb-1 text-xs text-gray-500">
+                        <span>${wq.chapterName}</span>
+                        <span>문항 ${wq.questionNo}번</span>
+                    </div>
+                    <div class="text-sm font-medium text-gray-800 mb-2">
+                        Q. ${wq.questionText}
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                            <div class="text-gray-500">선택한 답</div>
+                            <div class="font-semibold text-red-600">${wq.userAnswer}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">정답</div>
+                            <div class="font-semibold text-green-600">${wq.correctAnswer}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">설명</div>
+                            <div class="text-gray-700">${wq.comment}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDetail();
+        });
+    </script>
+</body>
+</html>
+
