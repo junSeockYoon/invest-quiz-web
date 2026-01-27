@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test - 챕터 선택</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 챕터 카드 호버 효과 */
+        .chapter-card {
+            transition: all 0.3s ease;
+        }
+        
+        .chapter-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chapter-card:active {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Container -->
+    <div class="main-content flex flex-col min-h-screen px-6 py-8">
+        
+        <!-- 헤더 -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">CQ Level Test</h1>
+            <p class="text-gray-600">학습하고 싶은 챕터를 선택하세요</p>
+        </header>
+
+        <!-- 챕터 목록 -->
+        <div id="chapters-container" class="space-y-4 flex-1">
+            <!-- 챕터 카드들이 여기에 동적으로 추가됩니다 -->
+        </div>
+
+    </div>
+
+    <!-- 퀴즈 JavaScript 파일 -->
+    <script src="/js/quiz.js"></script>
+
+    <!-- 챕터 목록 로드 및 초기화 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/test/api/chapters');
+                const result = await response.json();
+                
+                if (result.info && result.info.status === 'S' && result.dataset && result.dataset.data) {
+                    const chapters = result.dataset.data;
+                    displayChapters(chapters);
+                } else {
+                    console.error('챕터 목록을 불러올 수 없습니다.');
+                    alert('챕터 목록을 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('챕터 목록 로드 오류:', error);
+                alert('챕터 목록을 불러오는 중 오류가 발생했습니다.');
+            }
+        });
+
+        function displayChapters(chapters) {
+            const container = document.getElementById('chapters-container');
+            
+            if (!chapters || chapters.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">챕터가 없습니다.</p>';
+                return;
+            }
+
+            container.innerHTML = chapters.map((chapter, index) => {
+                const chapterNumber = index + 1;
+                // convertCamelcase가 snake_case를 camelCase로 변환하므로 camelCase로 접근
+                const questionCount = chapter.questionCount || 0;
+                const chapterTitle = chapter.chapterTitle || '';
+                const chapterDescription = chapter.chapterDescription || '';
+                
+                // 디버깅: 데이터 확인
+                console.log('챕터 데이터:', chapter);
+                
+                return `
+                    <div class="chapter-card bg-white rounded-2xl p-6 shadow-md cursor-pointer" 
+                         onclick="selectChapter(${chapter.id})">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h2 class="text-xl font-bold text-gray-800 mb-1">
+                                    [제 ${chapterNumber}장] ${chapterTitle}
+                                </h2>
+                                <p class="text-sm text-gray-500 leading-relaxed">
+                                    ${chapterDescription}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <span class="text-sm text-gray-600">문제 수: <strong>${questionCount}개</strong></span>
+                            <span class="text-blue-500 font-semibold">시작하기 →</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectChapter(chapterId) {
+            window.location.href = `/test/chapter/${chapterId}`;
+        }
+    </script>
+</body>
+</html>

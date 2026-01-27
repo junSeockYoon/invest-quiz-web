@@ -9,7 +9,8 @@ let quizData = {
     answers: [], // 사용자가 선택한 답변 저장
     totalQuestions: 0,
     startTime: null, // 퀴즈 시작 시각
-    questionStartTime: null // 현재 문항 시작 시각
+    questionStartTime: null, // 현재 문항 시작 시각
+    chapterId: null // 현재 챕터 ID
 };
 
 /**
@@ -107,28 +108,95 @@ function selectAnswer(answer) {
         responseTimeMs = now - quizData.questionStartTime;
     }
 
+    // 정답 여부 확인
+    const isCorrect = answer === currentQuestion.answer;
+
     // 답변 저장
     quizData.answers[quizData.currentIndex] = {
         questionNum: currentQuestion.questionNum,
         userAnswer: answer,
         correctAnswer: currentQuestion.answer,
-        isCorrect: answer === currentQuestion.answer,
+        isCorrect: isCorrect,
         responseTimeMs: responseTimeMs
     };
     
-    // 선택된 버튼 시각적 피드백
-    if (answer === 'O') {
-        document.getElementById('btn-o').classList.add('ring-4', 'ring-blue-300');
-        document.getElementById('btn-x').classList.remove('ring-4', 'ring-red-300');
-    } else {
-        document.getElementById('btn-x').classList.add('ring-4', 'ring-red-300');
-        document.getElementById('btn-o').classList.remove('ring-4', 'ring-blue-300');
-    }
+    // 버튼 비활성화 (중복 클릭 방지)
+    document.getElementById('btn-o').disabled = true;
+    document.getElementById('btn-x').disabled = true;
     
-    // 다음 문제로 넘어가는 인터렉션
-    setTimeout(() => {
-        moveToNextQuestion();
-    }, 500);
+    // 즉시 피드백 표시
+    if (isCorrect) {
+        // 정답: 초록색 체크 표시
+        showCorrectFeedback(answer);
+        // 500ms 후 자동으로 다음 문제로 이동
+        setTimeout(() => {
+            moveToNextQuestion();
+        }, 500);
+    } else {
+        // 오답: 빨간색 X 표시 및 오답 모달 표시
+        showIncorrectFeedback(answer, currentQuestion.answer);
+    }
+}
+
+/**
+ * 정답 피드백 표시
+ * @param {string} selectedAnswer - 선택한 답변
+ */
+function showCorrectFeedback(selectedAnswer) {
+    const selectedButton = selectedAnswer === 'O' ? document.getElementById('btn-o') : document.getElementById('btn-x');
+    
+    // 초록색 체크 표시
+    selectedButton.classList.remove('bg-blue-500', 'bg-red-500', 'hover:bg-blue-600', 'hover:bg-red-600');
+    selectedButton.classList.add('bg-green-500');
+    selectedButton.innerHTML = `
+        <span class="text-2xl font-bold">✓</span>
+        <span>정답입니다!</span>
+    `;
+}
+
+/**
+ * 오답 피드백 표시
+ * @param {string} selectedAnswer - 선택한 답변
+ * @param {string} correctAnswer - 정답
+ */
+function showIncorrectFeedback(selectedAnswer, correctAnswer) {
+    const selectedButton = selectedAnswer === 'O' ? document.getElementById('btn-o') : document.getElementById('btn-x');
+    
+    // 빨간색 X 표시
+    selectedButton.classList.remove('bg-blue-500', 'bg-red-500', 'hover:bg-blue-600', 'hover:bg-red-600');
+    selectedButton.classList.add('bg-red-600');
+    selectedButton.innerHTML = `
+        <span class="text-2xl font-bold">✗</span>
+        <span>오답입니다</span>
+    `;
+    
+    // 오답 모달 표시
+    showWrongAnswerModal(correctAnswer);
+}
+
+/**
+ * 오답 모달 표시
+ * @param {string} correctAnswer - 정답
+ */
+function showWrongAnswerModal(correctAnswer) {
+    const modal = document.getElementById('wrong-answer-modal');
+    const correctAnswerText = document.getElementById('correct-answer-text');
+    
+    correctAnswerText.textContent = `정답: ${correctAnswer === 'O' ? 'O (정답)' : 'X (오답)'}`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+/**
+ * 오답 모달 닫기 및 다음 문제로 이동
+ */
+function closeWrongAnswerModal() {
+    const modal = document.getElementById('wrong-answer-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // 다음 문제로 이동
+    moveToNextQuestion();
 }
 
 /**
@@ -166,20 +234,46 @@ function moveToNextQuestion() {
  * 버튼 선택 상태 초기화
  */
 function resetButtonSelection() {
-    document.getElementById('btn-o').classList.remove('ring-4', 'ring-blue-300');
-    document.getElementById('btn-x').classList.remove('ring-4', 'ring-red-300');
+    const btnO = document.getElementById('btn-o');
+    const btnX = document.getElementById('btn-x');
+    
+    // 모든 스타일 초기화
+    btnO.classList.remove('ring-4', 'ring-blue-300', 'bg-green-500', 'bg-red-600');
+    btnX.classList.remove('ring-4', 'ring-red-300', 'bg-green-500', 'bg-red-600');
+    
+    // 원래 색상으로 복원
+    btnO.classList.add('bg-blue-500', 'hover:bg-blue-600');
+    btnX.classList.add('bg-red-500', 'hover:bg-red-600');
+    
+    // 버튼 활성화
+    btnO.disabled = false;
+    btnX.disabled = false;
+    
+    // 원래 텍스트로 복원
+    btnO.innerHTML = `
+        <span class="text-2xl font-bold">O</span>
+        <span>정답</span>
+    `;
+    btnX.innerHTML = `
+        <span class="text-2xl font-bold">X</span>
+        <span>오답</span>
+    `;
 }
 
 /**
- * 등급 계산
- * @param {number} score - 정답 개수 (0~56)
+ * 등급 계산 (챕터별 문제 수에 따라 비율로 계산)
+ * @param {number} score - 정답 개수
+ * @param {number} total - 전체 문제 수
  * @returns {string} 등급 (S, A, B, C, D)
  */
-function calculateGrade(score) {
-    if (score >= 51) return 'S';
-    if (score >= 45) return 'A';
-    if (score >= 39) return 'B';
-    if (score >= 28) return 'C';
+function calculateGrade(score, total) {
+    const percentage = (score / total) * 100;
+    
+    // 비율 기반 등급 계산
+    if (percentage >= 90) return 'S';
+    if (percentage >= 80) return 'A';
+    if (percentage >= 70) return 'B';
+    if (percentage >= 60) return 'C';
     return 'D';
 }
 
@@ -191,7 +285,6 @@ async function completeQuiz() {
     const correctCount = quizData.answers.filter(answer => answer && answer.isCorrect).length;
     const totalCount = quizData.answers.filter(answer => !!answer).length;
     const score = Math.round((correctCount / totalCount) * 100);
-    const grade = calculateGrade(correctCount);
 
     // 소요 시간 계산 (초 단위)
     const endTime = Date.now();
@@ -201,8 +294,8 @@ async function completeQuiz() {
     // 결과 데이터 준비
     const resultData = {
         totalScore: correctCount,
-        grade: grade,
-        elapsedSeconds: elapsedSeconds, // 퀴즈 풀이 소요 시간(초)
+        elapsedSeconds: elapsedSeconds,
+        chapterId: quizData.chapterId, // 챕터 ID 추가
         // 비어 있거나 세팅되지 않은 답변은 제외
         details: quizData.answers
             .filter(answer => !!answer)
@@ -215,7 +308,7 @@ async function completeQuiz() {
     };
     
     try {
-        // 서버로 결과 전송
+        // 서버로 결과 전송 (백그라운드에서 저장만)
         const response = await fetch('/test/submit', {
             method: 'POST',
             headers: {
@@ -227,29 +320,54 @@ async function completeQuiz() {
         const result = await response.json();
         
         if (result.info && result.info.status === 'S') {
-            // 성공 시 결과 페이지로 이동
-            const data = Array.isArray(result.dataset.data) ? result.dataset.data[0] : result.dataset.data;
-            const resultId = data ? data.resultId : null;
-            if (resultId) {
-                window.location.href = `/test/result/${resultId}`;
-            } else {
-                alert(
-                    `퀴즈 완료!\n` +
-                    `정답: ${correctCount}/${totalCount} (${score}%)\n` +
-                    `등급: ${grade}\n` +
-                    `소요 시간: ${elapsedSeconds}초`
-                );
-            }
+            // 완료 모달 표시 (결과 페이지로 이동하지 않음)
+            showCompletionModal(correctCount, totalCount, score, elapsedSeconds);
         } else {
-            alert('결과 저장 중 오류가 발생했습니다.');
+            // 저장 실패해도 완료 모달은 표시
+            showCompletionModal(correctCount, totalCount, score, elapsedSeconds);
+            console.error('결과 저장 실패:', result);
         }
     } catch (error) {
         console.error('결과 저장 오류:', error);
-        alert('결과 저장 중 오류가 발생했습니다.');
+        // 네트워크 오류 등으로 저장 실패해도 완료 모달은 표시
+        showCompletionModal(correctCount, totalCount, score, elapsedSeconds);
     }
+}
+
+/**
+ * 완료 모달 표시
+ */
+function showCompletionModal(correctCount, totalCount, score, elapsedSeconds) {
+    const modal = document.getElementById('completion-modal');
+    const correctCountEl = document.getElementById('completion-correct-count');
+    const totalCountEl = document.getElementById('completion-total-count');
+    const scoreEl = document.getElementById('completion-score');
+    const timeEl = document.getElementById('completion-time');
+    
+    correctCountEl.textContent = correctCount;
+    totalCountEl.textContent = totalCount;
+    scoreEl.textContent = score;
+    timeEl.textContent = `소요시간 ${elapsedSeconds}초`;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+/**
+ * 완료 모달 닫기 및 챕터 선택으로 돌아가기
+ */
+function closeCompletionModal() {
+    const modal = document.getElementById('completion-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // 챕터 선택 화면으로 이동
+    window.location.href = '/test/chapters';
 }
 
 // 전역 함수로 export (HTML에서 호출하기 위해)
 window.selectAnswer = selectAnswer;
 window.initQuiz = initQuiz;
+window.closeWrongAnswerModal = closeWrongAnswerModal;
+window.closeCompletionModal = closeCompletionModal;
 

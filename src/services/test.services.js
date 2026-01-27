@@ -2,17 +2,6 @@ const { commonDao, mapper } = require('../dao/common.dao');
 const ResultModel = require('../models/common/result.model');
 const logger = require('../config/logger');
 
-const main = async () => {
-    const resultModel = new ResultModel();
-    try {
-        const result = await commonDao(mapper.TEST, 'main');
-        resultModel.successByData(result);
-    } catch (error) {
-        logger.error(error);
-        resultModel.failureMessageException(null, error);    }
-    return resultModel;
-};
-
 const submitResult = async (resultData) => {
     const resultModel = new ResultModel();
     try {
@@ -26,7 +15,7 @@ const submitResult = async (resultData) => {
         const insertResult = await commonDao(mapper.TEST, 'insertResult', {
             userName: userName,
             totalScore: resultData.totalScore,
-            grade: resultData.grade
+            chapterId: resultData.chapterId || null
         });
 
         // insertId는 result[0].insertId에 저장됩니다 (commonDao에서 result[0]을 반환)
@@ -60,34 +49,67 @@ const submitResult = async (resultData) => {
     return resultModel;
 };
 
-const getResult = async (resultId) => {
+const getChapters = async () => {
     const resultModel = new ResultModel();
     try {
-        // 결과 조회
-        const result = await commonDao(mapper.TEST, 'getResult', { id: resultId });
-        
-        if (!result || result.length === 0) {
-            throw new Error('결과를 찾을 수 없습니다.');
-        }
-
-        // 상세 결과 조회
-        const details = await commonDao(mapper.TEST, 'getResultDetails', { resultId: resultId });
-        
-        const resultData = {
-            ...result[0],
-            details: details || []
-        };
-
-        resultModel.successByData(resultData);
+        const chapters = await commonDao(mapper.TEST, 'getChapters');
+        resultModel.successByData(chapters || []);
     } catch (error) {
         logger.error(error);
-        resultModel.failureMessageException('결과 조회 중 오류가 발생했습니다.', error);
+        resultModel.failureMessageException('챕터 목록 조회 중 오류가 발생했습니다.', error);
+    }
+    return resultModel;
+};
+
+const getQuestionsByChapter = async (chapterId) => {
+    const resultModel = new ResultModel();
+    try {
+        const questions = await commonDao(mapper.TEST, 'getQuestionsByChapter', { chapterId: chapterId });
+        resultModel.successByData(questions || []);
+    } catch (error) {
+        logger.error(error);
+        resultModel.failureMessageException('문제 조회 중 오류가 발생했습니다.', error);
+    }
+    return resultModel;
+};
+
+const getAdminDashboardData = async () => {
+    const resultModel = new ResultModel();
+    try {
+        // TODO: 실제 DB 연동 전까지는 가짜 데이터(목업 데이터)를 반환합니다.
+        const chapterSummary = [
+            { chapterId: 1, chapterTitle: '환율 (Exchange Rate)', attemptCount: 12, avgScore: 4.2 },
+            { chapterId: 2, chapterTitle: '금리 (Interest Rate)', attemptCount: 9, avgScore: 3.7 },
+            { chapterId: 3, chapterTitle: '인플레이션 (Inflation)', attemptCount: 6, avgScore: 2.9 },
+            { chapterId: 4, chapterTitle: '경제성장률 (GDP Growth)', attemptCount: 4, avgScore: 3.2 },
+            { chapterId: 5, chapterTitle: '경상수지 및 무역수지 (Balance of Trade)', attemptCount: 3, avgScore: 2.5 },
+        ];
+
+        const now = new Date();
+        const recentResults = [
+            { id: 101, userName: 'USER_1', chapterTitle: '환율 (Exchange Rate)', totalScore: 5, createdAt: new Date(now.getTime() - 1000 * 60 * 5).toISOString() },
+            { id: 102, userName: 'USER_2', chapterTitle: '금리 (Interest Rate)', totalScore: 3, createdAt: new Date(now.getTime() - 1000 * 60 * 15).toISOString() },
+            { id: 103, userName: 'USER_3', chapterTitle: '인플레이션 (Inflation)', totalScore: 4, createdAt: new Date(now.getTime() - 1000 * 60 * 30).toISOString() },
+            { id: 104, userName: 'USER_4', chapterTitle: '경제성장률 (GDP Growth)', totalScore: 2, createdAt: new Date(now.getTime() - 1000 * 60 * 45).toISOString() },
+            { id: 105, userName: 'USER_5', chapterTitle: '환율 (Exchange Rate)', totalScore: 1, createdAt: new Date(now.getTime() - 1000 * 60 * 60).toISOString() },
+            { id: 106, userName: 'USER_6', chapterTitle: '금리 (Interest Rate)', totalScore: 5, createdAt: new Date(now.getTime() - 1000 * 60 * 75).toISOString() },
+            { id: 107, userName: 'USER_7', chapterTitle: '경상수지 및 무역수지 (Balance of Trade)', totalScore: 3, createdAt: new Date(now.getTime() - 1000 * 60 * 90).toISOString() },
+        ];
+
+        resultModel.successByData({
+            chapterSummary: chapterSummary || [],
+            recentResults: recentResults || [],
+        });
+    } catch (error) {
+        logger.error(error);
+        resultModel.failureMessageException('관리자 대시보드 데이터 조회 중 오류가 발생했습니다.', error);
     }
     return resultModel;
 };
 
 module.exports = {
-    main,
     submitResult,
-    getResult,
+    getChapters,
+    getQuestionsByChapter,
+    getAdminDashboardData,
 };

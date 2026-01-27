@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 대시보드 - CQ Level Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-gray-100 flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold">관리자 대시보드</h1>
+                <p class="text-sm text-gray-400 mt-1">CQ Level Test</p>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">메뉴</div>
+                <a href="/admin" class="block px-3 py-2 rounded-lg bg-gray-800 text-sm font-medium">
+                    통계 대시보드
+                </a>
+                <a href="/admin/results" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    퀴즈 결과 리스트
+                </a>
+                <a href="/test/chapters" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    사용자 퀴즈 화면 열기
+                </a>
+            </nav>
+            <div class="px-6 py-4 border-t border-gray-700 text-xs text-gray-500">
+                © CQ Level Test
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- Header -->
+            <header class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">퀴즈 통계</h2>
+                    <p class="text-sm text-gray-500 mt-1">챕터별 정답 통계와 최근 결과를 확인할 수 있습니다.</p>
+                </div>
+                <button id="refresh-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
+                    새로고침
+                </button>
+            </header>
+
+            <!-- Charts Section -->
+            <section class="grid grid-cols-2 gap-8 mb-10">
+                <!-- Chapter Avg Score Chart -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">챕터별 평균 점수</h3>
+                    <canvas id="chapterAvgScoreChart" height="150"></canvas>
+                </div>
+
+                <!-- Chapter Attempt Count Chart -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">챕터별 응시 횟수</h3>
+                    <canvas id="chapterAttemptChart" height="150"></canvas>
+                </div>
+            </section>
+
+            <!-- Recent Results Table -->
+            <section class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">최근 퀴즈 결과</h3>
+                    <span id="result-count" class="text-sm text-gray-500"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                <th class="px-4 py-2">결과 ID</th>
+                                <th class="px-4 py-2">사용자</th>
+                                <th class="px-4 py-2">챕터</th>
+                                <th class="px-4 py-2">점수</th>
+                                <th class="px-4 py-2">응시일시</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-results-body" class="divide-y divide-gray-100">
+                            <!-- 데이터 로드 후 채워짐 -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let chapterAvgScoreChart = null;
+        let chapterAttemptChart = null;
+
+        // 퍼블리싱/디자인 확인을 위한 목업 데이터
+        const mockDashboardData = {
+            chapterSummary: [
+                { chapterId: 1, chapterTitle: '환율 (Exchange Rate)', attemptCount: 10, avgScore: 4.2 },
+                { chapterId: 2, chapterTitle: '금리 (Interest Rate)', attemptCount: 7, avgScore: 3.5 },
+                { chapterId: 3, chapterTitle: '인플레이션 (Inflation)', attemptCount: 5, avgScore: 2.8 },
+            ],
+            recentResults: [
+                { id: 101, userName: 'USER_1', chapterTitle: '환율 (Exchange Rate)', totalScore: 5, createdAt: new Date().toISOString() },
+                { id: 102, userName: 'USER_2', chapterTitle: '금리 (Interest Rate)', totalScore: 3, createdAt: new Date().toISOString() },
+                { id: 103, userName: 'USER_3', chapterTitle: '인플레이션 (Inflation)', totalScore: 4, createdAt: new Date().toISOString() },
+            ],
+        };
+
+        async function loadDashboardData() {
+            try {
+                const res = await fetch('/admin/api/dashboard');
+                const json = await res.json();
+
+                if (!json || !json.dataset || !json.dataset.data) {
+                    console.warn('대시보드 데이터가 없어 목업 데이터를 사용합니다.', json);
+                    renderChapterCharts(mockDashboardData.chapterSummary);
+                    renderRecentResults(mockDashboardData.recentResults);
+                    return;
+                }
+
+                const data = json.dataset.data;
+                const chapterSummary = data.chapterSummary || mockDashboardData.chapterSummary;
+                const recentResults = data.recentResults || mockDashboardData.recentResults;
+
+                renderChapterCharts(chapterSummary);
+                renderRecentResults(recentResults);
+            } catch (error) {
+                console.error('대시보드 데이터 로드 오류, 목업 데이터 사용:', error);
+                // API 오류가 나도 퍼블리싱을 볼 수 있도록 목업 데이터 사용
+                renderChapterCharts(mockDashboardData.chapterSummary);
+                renderRecentResults(mockDashboardData.recentResults);
+            }
+        }
+
+        function renderChapterCharts(chapterSummary) {
+            const labels = chapterSummary.map(item => item.chapterTitle || `챕터 ${item.chapterId}`);
+            const avgScores = chapterSummary.map(item => item.avgScore || 0);
+            const attemptCounts = chapterSummary.map(item => item.attemptCount || 0);
+
+            const avgCtx = document.getElementById('chapterAvgScoreChart').getContext('2d');
+            const attemptCtx = document.getElementById('chapterAttemptChart').getContext('2d');
+
+            if (chapterAvgScoreChart) chapterAvgScoreChart.destroy();
+            if (chapterAttemptChart) chapterAttemptChart.destroy();
+
+            chapterAvgScoreChart = new Chart(avgCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '평균 점수',
+                        data: avgScores,
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` 평균 점수: ${ctx.parsed.y.toFixed(2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '점수' }
+                        }
+                    }
+                }
+            });
+
+            chapterAttemptChart = new Chart(attemptCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '응시 횟수',
+                        data: attemptCounts,
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: 'rgba(5, 150, 105, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` 응시 횟수: ${ctx.parsed.y}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '횟수' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRecentResults(recentResults) {
+            const tbody = document.getElementById('recent-results-body');
+            const countEl = document.getElementById('result-count');
+
+            countEl.textContent = `총 ${recentResults.length}건`;
+
+            if (!recentResults.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">최근 결과가 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = recentResults.map(item => {
+                const dateStr = new Date(item.createdAt).toLocaleString('ko-KR');
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 text-gray-700">${item.id}</td>
+                        <td class="px-4 py-2 text-gray-700">${item.userName}</td>
+                        <td class="px-4 py-2 text-gray-700">${item.chapterTitle || ''}</td>
+                        <td class="px-4 py-2 text-gray-700">${item.totalScore}</td>
+                        <td class="px-4 py-2 text-gray-500 text-xs">${dateStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.addEventListener('click', () => {
+                loadDashboardData();
+            });
+        });
+    </script>
+</body>
+</html>
+

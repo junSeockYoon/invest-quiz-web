@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>퀴즈 결과 리스트 - 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-gray-100 flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold">관리자</h1>
+                <p class="text-sm text-gray-400 mt-1">CQ Level Test</p>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">메뉴</div>
+                <a href="/admin" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    대시보드
+                </a>
+                <a href="/admin/results" class="block px-3 py-2 rounded-lg bg-gray-800 text-sm font-medium">
+                    퀴즈 결과 리스트
+                </a>
+                <a href="/test/chapters" class="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800">
+                    사용자 퀴즈 화면 열기
+                </a>
+            </nav>
+            <div class="px-6 py-4 border-t border-gray-700 text-xs text-gray-500">
+                © CQ Level Test
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- Header -->
+            <header class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">퀴즈 결과 리스트</h2>
+                    <p class="text-sm text-gray-500 mt-1">사용자별 퀴즈 응시 결과를 확인할 수 있는 페이지입니다. (현재는 퍼블리싱용 더미 데이터)</p>
+                </div>
+                <div class="space-x-2">
+                    <button class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-xs font-medium">
+                        필터
+                    </button>
+                    <button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium">
+                        새로고침
+                    </button>
+                </div>
+            </header>
+
+            <!-- Filters (UI Only) -->
+            <section class="mb-4 bg-white rounded-xl shadow p-4">
+                <div class="grid grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <label class="block text-gray-600 mb-1">사용자 이름</label>
+                        <input type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="USER_">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 mb-1">챕터</label>
+                        <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                            <option>전체</option>
+                            <option>환율 (Exchange Rate)</option>
+                            <option>금리 (Interest Rate)</option>
+                            <option>인플레이션 (Inflation)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 mb-1">기간</label>
+                        <input type="date" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                    </div>
+                    <div class="flex items-end">
+                        <button class="w-full px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md text-sm font-medium">
+                            검색
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Result List Table -->
+            <section class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">결과 목록</h3>
+                    <span id="result-total-count" class="text-sm text-gray-500">총 0건</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                <th class="px-4 py-2">결과 ID</th>
+                                <th class="px-4 py-2">사용자</th>
+                                <th class="px-4 py-2">챕터</th>
+                                <th class="px-4 py-2">점수</th>
+                                <th class="px-4 py-2">응시일시</th>
+                            </tr>
+                        </thead>
+                        <tbody id="result-table-body" class="divide-y divide-gray-100">
+                            <!-- JavaScript에서 더미 데이터 + 페이징으로 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div id="pagination-container" class="mt-4 flex items-center justify-between text-xs text-gray-600">
+                    <div id="pagination-info"></div>
+                    <div class="flex items-center space-x-1" id="pagination-buttons">
+                        <!-- JavaScript에서 페이지 버튼 렌더링 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        // 퍼블리싱용 더미 결과 데이터 (30건)
+        const mockResults = (() => {
+            const chapters = [
+                '환율 (Exchange Rate)',
+                '금리 (Interest Rate)',
+                '인플레이션 (Inflation)',
+                '경제성장률 (GDP Growth)',
+                '경상수지 및 무역수지 (Balance of Trade)',
+            ];
+            const results = [];
+            const baseTime = new Date();
+
+            for (let i = 0; i < 30; i++) {
+                const id = 200 + i;
+                const userIdx = (i % 10) + 1;
+                const chapter = chapters[i % chapters.length];
+                const score = (i % 6); // 0~5
+                const createdAt = new Date(baseTime.getTime() - i * 1000 * 60 * 7).toISOString();
+
+                results.push({
+                    id,
+                    userName: `USER_${userIdx}`,
+                    chapterTitle: chapter,
+                    totalScore: score,
+                    createdAt,
+                });
+            }
+            return results;
+        })();
+
+        const pageSize = 10;
+        let currentPage = 1;
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return iso;
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:00`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('result-table-body');
+            const totalCountEl = document.getElementById('result-total-count');
+            const total = mockResults.length;
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, total);
+            const pageItems = mockResults.slice(start, end);
+
+            totalCountEl.textContent = `총 ${total}건`;
+
+            if (!pageItems.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">결과가 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = pageItems.map(item => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 text-gray-700">${item.id}</td>
+                    <td class="px-4 py-2 text-gray-700">${item.userName}</td>
+                    <td class="px-4 py-2 text-gray-700">${item.chapterTitle}</td>
+                    <td class="px-4 py-2 text-gray-700">${item.totalScore}</td>
+                    <td class="px-4 py-2 text-gray-500 text-xs">${formatDate(item.createdAt)}</td>
+                </tr>
+            `).join('');
+
+            renderPagination(total, start, end);
+        }
+
+        function renderPagination(total, start, end) {
+            const infoEl = document.getElementById('pagination-info');
+            const buttonsEl = document.getElementById('pagination-buttons');
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+            infoEl.textContent = `${start + 1}–${end} / ${total}건 (페이지 ${currentPage}/${totalPages})`;
+
+            let html = '';
+            const disabledPrev = currentPage === 1 ? 'opacity-40 cursor-default' : 'hover:bg-gray-200 cursor-pointer';
+            const disabledNext = currentPage === totalPages ? 'opacity-40 cursor-default' : 'hover:bg-gray-200 cursor-pointer';
+
+            html += `
+                <button class="px-2 py-1 rounded ${disabledPrev}" data-page="prev">이전</button>
+            `;
+
+            const maxPageButtons = 5;
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+            if (endPage - startPage < maxPageButtons - 1) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                const isActive = p === currentPage;
+                html += `
+                    <button
+                        class="px-3 py-1 rounded ${isActive ? 'bg-gray-800 text-white' : 'hover:bg-gray-200'}"
+                        data-page="${p}"
+                    >
+                        ${p}
+                    </button>
+                `;
+            }
+
+            html += `
+                <button class="px-2 py-1 rounded ${disabledNext}" data-page="next">다음</button>
+            `;
+
+            buttonsEl.innerHTML = html;
+
+            buttonsEl.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = btn.getAttribute('data-page');
+                    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+                    if (val === 'prev' && currentPage > 1) {
+                        currentPage--;
+                    } else if (val === 'next' && currentPage < totalPages) {
+                        currentPage++;
+                    } else if (val !== 'prev' && val !== 'next') {
+                        currentPage = parseInt(val, 10);
+                    }
+                    renderTable();
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+        });
+    </script>
+</body>
+</html>
+

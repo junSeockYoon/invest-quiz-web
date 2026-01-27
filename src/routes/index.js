@@ -8,6 +8,7 @@ const express = require('express');
 // 실제 개별 경로 정의는 ./main.route.js 에서 처리됩니다.
 const mainRoute = require('./main.route');
 const testRoute = require('./test.route');
+const adminRoute = require('./admin.route');
 
 // 하위 라우터들을 묶어 외부로 내보낼 상위 라우터 객체를 생성합니다.
 const router = express.Router();
@@ -17,5 +18,6 @@ const router = express.Router();
 // 예) GET '/' → mainRoute.index, GET '/detail/:id' → mainRoute.detail 등
 router.use('/', mainRoute);
 router.use('/test', testRoute);
+router.use('/admin', adminRoute);
 // 이 라우터를 모듈로 내보내서 app.js에서 사용합니다.
 module.exports = router;
