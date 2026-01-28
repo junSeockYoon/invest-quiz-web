@@ -12,7 +12,13 @@
 
 - **메인 랜딩 페이지**
   - 모바일 감성의 단일 페이지 UI
-  - `투자 지능 테스트 하기` 버튼을 통해 퀴즈로 이동
+  - `투자 지능 테스트 하기` 버튼을 통해 레벨 테스트로 이동
+- **레벨 테스트**
+  - 5문항 OX 퀴즈로 투자 지능 간편 측정
+  - 완료 후 결과 화면(등급, 정답률, 소요 시간) 표시 후 관심사 선택으로 이어짐
+- **관심분야 선택**
+  - 레벨 테스트 결과 후 관심 챕터(환율, 금리, 외환 등)를 키워드 버튼으로 다중 선택
+  - 선택한 관심사는 챕터 목록 화면에서 상단에 파란색 강조로 표시
 - **투자 지능 OX 퀴즈**
   - 서버에서 가져온 문제 리스트를 기반으로 순차 진행
   - 챕터(환율, 금리, 인플레이션 등) 정보와 설명 표시
@@ -66,7 +72,8 @@ investment-quiz-for-web/
 │   │   └── logger.js       # winston 로거 설정
 │   ├── controllers/
 │   │   ├── main.controller.js  # 메인 랜딩 페이지 컨트롤러
-│   │   └── test.controller.js  # 퀴즈/결과 컨트롤러
+│   │   ├── test.controller.js  # 퀴즈/레벨테스트/관심사/챕터 컨트롤러
+│   │   └── admin.controller.js # 관리자 컨트롤러
 │   ├── services/
 │   │   ├── index.js        # 서비스 인덱스
 │   │   ├── main.services.js# (기존 예제용 서비스 – 필요시 확장)
@@ -79,13 +86,18 @@ investment-quiz-for-web/
 │   ├── models/
 │   │   └── common/         # 결과 모델(ResultModel 등)
 │   └── routes/
-│       ├── index.js        # 라우트 엔트리 (/, /test 등 등록)
+│       ├── index.js        # 라우트 엔트리 (/, /test, /admin 등록)
 │       ├── main.route.js   # 메인 페이지 라우트
-│       └── test.route.js   # 퀴즈/결과 라우트
+│       ├── test.route.js   # 퀴즈/레벨테스트/관심사/챕터 라우트
+│       └── admin.route.js  # 관리자 라우트
 └── view/
     ├── main.ejs            # 메인 랜딩 페이지 (CQ LEVEL TEST)
     └── test/
-        ├── main.ejs        # 퀴즈 화면
+        ├── main.ejs        # 퀴즈 화면 (챕터별)
+        ├── chapters.ejs    # 챕터 선택 화면
+        ├── interests.ejs   # 관심사 선택 화면
+        ├── level.ejs       # 레벨 테스트 화면
+        ├── level-result.ejs# 레벨 테스트 결과 화면
         └── result.ejs      # 결과 화면
 ```
 
