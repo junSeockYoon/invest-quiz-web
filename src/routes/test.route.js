@@ -8,6 +8,9 @@ const router = express.Router();
  *  화면 렌더링용 라우트: 브라우저에 EJS 템플릿을 렌더링하여 반환합니다.
  ****************************************************************************************/
 router.get('/', testController.main);
+router.get('/level', testController.showLevelTest);
+router.get('/level-result', testController.showLevelResult);
+router.get('/interests', testController.showInterests);
 router.get('/chapters', testController.showChapters);
 router.get('/chapter/:chapterId', testController.getQuestionsByChapter);
 

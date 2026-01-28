@@ -53,8 +53,18 @@ function displayQuestion(index) {
     document.getElementById('question-text').textContent = question.content;
     
     // 챕터 정보 업데이트
-    document.getElementById('chapter-title').textContent = `[제 ${getChapterNumber(question.chapterTitle)}장] ${question.chapterTitle}`;
-    document.getElementById('chapter-description').textContent = question.chapterDescription;
+    // snake_case와 camelCase 모두 처리
+    const chapterTitle = question.chapterTitle || question.chapter_title;
+    const chapterDescription = question.chapterDescription || question.chapter_description;
+    
+    // 레벨 테스트인 경우 챕터 번호 표시하지 않음
+    const isLevelTest = chapterTitle === '레벨 테스트' || chapterTitle === 'Level Test';
+    if (isLevelTest) {
+        document.getElementById('chapter-title').textContent = chapterTitle;
+    } else {
+        document.getElementById('chapter-title').textContent = `[제 ${getChapterNumber(chapterTitle)}장] ${chapterTitle}`;
+    }
+    document.getElementById('chapter-description').textContent = chapterDescription;
     
     // 버튼 선택 상태 초기화
     resetButtonSelection();

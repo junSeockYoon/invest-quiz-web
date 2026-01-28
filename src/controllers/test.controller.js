@@ -76,10 +76,43 @@ async function getQuestionsByChapter(req, res) {
     }
 }
 
+async function showLevelTest(req, res) {
+    try {
+        res.render('test/level');
+    } catch (error) {
+        console.error('=== 레벨 테스트 화면 에러 ===');
+        console.error(error);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
+}
+
+async function showLevelResult(req, res) {
+    try {
+        res.render('test/level-result');
+    } catch (error) {
+        console.error('=== 레벨 테스트 결과 화면 에러 ===');
+        console.error(error);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
+}
+
+async function showInterests(req, res) {
+    try {
+        res.render('test/interests');
+    } catch (error) {
+        console.error('=== 관심사 선택 페이지 에러 ===');
+        console.error(error);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
+}
+
 module.exports = {
     main,
     submitResult,
     showChapters,
     getChapters,
     getQuestionsByChapter,
+    showLevelTest,
+    showLevelResult,
+    showInterests,
 };

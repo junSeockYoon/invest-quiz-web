@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test - 관심사 선택</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 관심사 버튼 스타일 */
+        .interest-button {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #374151;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            width: auto;
+            display: inline-block;
+        }
+        
+        .interest-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #9ca3af;
+        }
+        
+        .interest-button.selected {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .interest-button.selected:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* 체크박스 커스텀 스타일 */
+        .custom-checkbox {
+            display: none;
+        }
+        
+        /* 관심사 버튼 컨테이너 - flex wrap으로 변경 */
+        .interests-grid {
+            display: flex;
+            flex-wrap: wrap;
+            column-gap: 12px;
+            row-gap: 12px;
+            justify-content: center;
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+        
+        /* 버튼 비활성화 상태 */
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        /* 버튼 활성화 애니메이션 */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .btn-active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Container -->
+    <div class="main-content flex flex-col min-h-screen px-6 py-8">
+        
+        <!-- 헤더 -->
+        <header class="mb-8 text-center">
+            <div class="mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center shadow-lg border-2 border-blue-100 mx-auto">
+                    <span class="text-3xl">🎯</span>
+                </div>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">관심사 선택</h1>
+            <p class="text-gray-600">학습하고 싶은 주제를 선택해주세요</p>
+            <p class="text-sm text-gray-500 mt-1">여러 개 선택 가능합니다</p>
+        </header>
+
+        <!-- 관심사 목록 -->
+        <div id="interests-container" class="interests-grid flex-1 mb-6">
+            <!-- 관심사 버튼들이 여기에 동적으로 추가됩니다 -->
+            <div class="w-full text-center text-gray-500 py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p>관심사 목록을 불러오는 중...</p>
+            </div>
+        </div>
+
+        <!-- 선택된 개수 표시 -->
+        <div id="selected-count" class="mb-4 text-center text-sm text-gray-600 hidden">
+            <span class="font-semibold text-blue-600" id="count-number">0</span>개 선택됨
+        </div>
+
+        <!-- 다음 단계 버튼 -->
+        <button 
+            id="next-button"
+            class="w-full py-5 px-6 bg-gray-300 text-gray-500 font-bold text-lg rounded-2xl shadow-md flex items-center justify-center gap-3 btn-disabled"
+            disabled
+        >
+            <span>다음 단계로</span>
+            <span class="text-xl">→</span>
+        </button>
+
+    </div>
+
+    <!-- 관심사 목록 로드 및 초기화 -->
+    <script>
+        let selectedInterests = [];
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/test/api/chapters');
+                const result = await response.json();
+                
+                if (result.info && result.info.status === 'S' && result.dataset && result.dataset.data) {
+                    const chapters = result.dataset.data;
+                    displayInterests(chapters);
+                } else {
+                    console.error('관심사 목록을 불러올 수 없습니다.');
+                    document.getElementById('interests-container').innerHTML = 
+                        '<p class="w-full text-center text-red-500 py-8">관심사 목록을 불러올 수 없습니다.</p>';
+                }
+            } catch (error) {
+                console.error('관심사 목록 로드 오류:', error);
+                document.getElementById('interests-container').innerHTML = 
+                    '<p class="w-full text-center text-red-500 py-8">관심사 목록을 불러오는 중 오류가 발생했습니다.</p>';
+            }
+        });
+
+        function displayInterests(chapters) {
+            const container = document.getElementById('interests-container');
+            
+            if (!chapters || chapters.length === 0) {
+                container.innerHTML = '<p class="w-full text-center text-gray-500 py-8">관심사가 없습니다.</p>';
+                return;
+            }
+
+            container.innerHTML = chapters.map((chapter) => {
+                const chapterTitle = chapter.chapterTitle || '';
+                // 키워드 추출: 괄호 앞의 텍스트만 가져오기
+                // 예: "환율 (Exchange Rate)" → "환율"
+                const keyword = chapterTitle.split(' (')[0].trim();
+                
+                return `
+                    <button 
+                        type="button"
+                        class="interest-button" 
+                        id="interest-btn-${chapter.id}"
+                        onclick="toggleInterest(${chapter.id}, this)">
+                        <input type="checkbox" 
+                               class="custom-checkbox" 
+                               id="interest-${chapter.id}" 
+                               value="${chapter.id}"
+                               onchange="handleCheckboxChange(${chapter.id}, this.checked)">
+                        ${keyword}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleInterest(chapterId, element) {
+            const checkbox = document.getElementById(`interest-${chapterId}`);
+            checkbox.checked = !checkbox.checked;
+            handleCheckboxChange(chapterId, checkbox.checked);
+        }
+
+        function handleCheckboxChange(chapterId, isChecked) {
+            if (isChecked) {
+                if (!selectedInterests.includes(chapterId)) {
+                    selectedInterests.push(chapterId);
+                }
+            } else {
+                selectedInterests = selectedInterests.filter(id => id !== chapterId);
+            }
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            // 선택된 버튼에 selected 클래스 추가/제거
+            selectedInterests.forEach(id => {
+                const button = document.getElementById(`interest-btn-${id}`);
+                if (button) {
+                    button.classList.add('selected');
+                }
+            });
+            
+            // 선택 해제된 버튼에서 selected 클래스 제거
+            document.querySelectorAll('.interest-button').forEach(button => {
+                const checkbox = button.querySelector('input[type="checkbox"]');
+                if (checkbox && !selectedInterests.includes(parseInt(checkbox.value))) {
+                    button.classList.remove('selected');
+                }
+            });
+            
+            // 선택된 개수 표시
+            const countElement = document.getElementById('selected-count');
+            const countNumber = document.getElementById('count-number');
+            const nextButton = document.getElementById('next-button');
+            
+            if (selectedInterests.length > 0) {
+                countElement.classList.remove('hidden');
+                countNumber.textContent = selectedInterests.length;
+                
+                // 버튼 활성화
+                nextButton.classList.remove('bg-gray-300', 'text-gray-500', 'btn-disabled');
+                nextButton.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-indigo-600', 'text-white', 'btn-active', 'hover:opacity-90', 'transition-all');
+                nextButton.disabled = false;
+            } else {
+                countElement.classList.add('hidden');
+                
+                // 버튼 비활성화
+                nextButton.classList.add('bg-gray-300', 'text-gray-500', 'btn-disabled');
+                nextButton.classList.remove('bg-gradient-to-r', 'from-blue-500', 'to-indigo-600', 'text-white', 'btn-active', 'hover:opacity-90', 'transition-all');
+                nextButton.disabled = true;
+            }
+        }
+
+        // 다음 단계 버튼 클릭 이벤트
+        document.getElementById('next-button').addEventListener('click', function() {
+            if (selectedInterests.length > 0) {
+                // 선택된 관심사를 세션 스토리지에 저장
+                sessionStorage.setItem('selectedInterests', JSON.stringify(selectedInterests));
+                
+                // 챕터 선택 페이지로 이동
+                window.location.href = '/test/chapters';
+            }
+        });
+    </script>
+</body>
+</html>

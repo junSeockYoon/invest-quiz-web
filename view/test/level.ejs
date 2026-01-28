@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test - 레벨 테스트</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 버튼 호버 효과 */
+        .quiz-button {
+            transition: all 0.2s ease;
+        }
+        
+        .quiz-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .quiz-button:active {
+            transform: translateY(0);
+        }
+        
+        /* 진행 바 애니메이션 */
+        @keyframes progress {
+            from { width: 0%; }
+        }
+        
+        .progress-bar {
+            animation: progress 0.5s ease-out;
+        }
+        
+        /* 다음 문제로 넘어가는 페이드 효과 */
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* 모달 애니메이션 */
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .modal-show {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 오답 모달 -->
+    <div id="wrong-answer-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full modal-show shadow-2xl">
+            <div class="text-center">
+                <div class="mb-4">
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-4xl text-red-600">✗</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">오답입니다</h3>
+                    <p id="correct-answer-text" class="text-lg text-gray-600 mb-6"></p>
+                </div>
+                <button 
+                    onclick="closeWrongAnswerModal()"
+                    class="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg rounded-xl shadow-md transition-all"
+                >
+                    다음 문제
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 완료 모달 -->
+    <div id="completion-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full modal-show shadow-2xl">
+            <div class="text-center">
+                <div class="mb-6">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-4xl text-green-600">✓</span>
+                    </div>
+                    <h3 class="text-3xl font-bold text-gray-800 mb-4">레벨 테스트 완료!</h3>
+                    <div class="space-y-3 text-left bg-gray-50 rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">정답 개수:</span>
+                            <span class="font-bold text-lg">
+                                <span id="completion-correct-count" class="text-green-600">0</span>
+                                /<span id="completion-total-count" class="text-gray-800">0</span>
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">정답률:</span>
+                            <span id="completion-score" class="font-bold text-lg text-blue-600">0%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">소요 시간:</span>
+                            <span id="completion-time" class="font-bold text-lg text-gray-800">소요시간 0초</span>
+                        </div>
+                    </div>
+                </div>
+                <button 
+                    onclick="closeCompletionModal()"
+                    class="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg rounded-xl shadow-md transition-all"
+                >
+                    메인으로 돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-content flex flex-col min-h-screen px-6 py-6">
+        
+        <!-- 1. 상단 정보 영역 -->
+        <header class="mb-6">
+            <!-- 진행률 표시 -->
+            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-4 overflow-hidden">
+                <div id="progress-bar" class="progress-bar h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full" style="width: 20%"></div>
+            </div>
+            
+            <!-- 레벨 테스트 타이틀 -->
+            <h1 id="chapter-title" class="text-lg font-bold text-gray-800 mb-2">
+                레벨 테스트
+            </h1>
+            
+            <!-- 설명 -->
+            <p id="chapter-description" class="text-sm text-gray-500 leading-relaxed">
+                투자 지능을 측정하는 5문제 테스트입니다
+            </p>
+        </header>
+
+        <!-- 2. 메인 질문 영역 -->
+        <div id="question-card" class="bg-white rounded-2xl p-8 shadow-md mb-8 flex-1 flex flex-col justify-center min-h-[200px]">
+            <div class="text-center">
+                <!-- 질문 내용 -->
+                <h2 id="question-text" class="text-xl font-semibold text-gray-800 leading-relaxed">
+                    문제가 로드되는 중...
+                </h2>
+            </div>
+        </div>
+
+        <!-- 3. 하단 인터렉션 (Buttons) -->
+        <div class="space-y-3 mb-6">
+            <!-- O 버튼: 파란색 계열 -->
+            <button 
+                id="btn-o" 
+                class="quiz-button w-full py-5 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg rounded-xl shadow-md flex items-center justify-center gap-3"
+                onclick="selectAnswer('O')"
+            >
+                <span class="text-2xl font-bold">O</span>
+                <span>정답</span>
+            </button>
+
+            <!-- X 버튼: 빨간색 계열 -->
+            <button 
+                id="btn-x" 
+                class="quiz-button w-full py-5 px-6 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-xl shadow-md flex items-center justify-center gap-3"
+                onclick="selectAnswer('X')"
+            >
+                <span class="text-2xl font-bold">X</span>
+                <span>오답</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- 레벨 테스트 문제 데이터 (리터럴) -->
+    <script>
+        // 레벨 테스트 문제 데이터 (5문제)
+        const levelTestData = [
+            {
+                questionNum: 1,
+                content: "원/달러 환율이 상승하면 한국 수출 기업의 경쟁력이 향상됩니다.",
+                answer: "O",
+                chapterTitle: "레벨 테스트",
+                chapterDescription: "투자 지능 측정"
+            },
+            {
+                questionNum: 2,
+                content: "금리가 상승하면 채권 가격이 하락합니다.",
+                answer: "O",
+                chapterTitle: "레벨 테스트",
+                chapterDescription: "투자 지능 측정"
+            },
+            {
+                questionNum: 3,
+                content: "인플레이션이 높아지면 실질 구매력이 증가합니다.",
+                answer: "X",
+                chapterTitle: "레벨 테스트",
+                chapterDescription: "투자 지능 측정"
+            },
+            {
+                questionNum: 4,
+                content: "경제성장률이 높아지면 주식 시장에 긍정적인 영향을 미칩니다.",
+                answer: "O",
+                chapterTitle: "레벨 테스트",
+                chapterDescription: "투자 지능 측정"
+            },
+            {
+                questionNum: 5,
+                content: "무역수지가 적자일 때 항상 경제에 부정적인 영향을 미칩니다.",
+                answer: "X",
+                chapterTitle: "레벨 테스트",
+                chapterDescription: "투자 지능 측정"
+            }
+        ];
+
+        // 서버에서 전달받은 퀴즈 데이터 형식으로 변환
+        var serverQuizData = levelTestData;
+        var chapterId = null; // 레벨 테스트는 chapterId가 없음
+    </script>
+
+    <!-- 퀴즈 JavaScript 파일 -->
+    <script src="/js/quiz.js"></script>
+
+    <!-- 퀴즈 초기화 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (serverQuizData && serverQuizData.length > 0) {
+                // 레벨 테스트는 chapterId가 없으므로 설정하지 않음
+                initQuiz(serverQuizData);
+            } else {
+                console.error('퀴즈 데이터가 없습니다.');
+                alert('퀴즈 데이터를 불러올 수 없습니다.');
+            }
+        });
+
+        // 레벨 테스트용 completeQuiz 함수 오버라이드 (quiz.js 로드 후 실행)
+        window.addEventListener('load', function() {
+            // quiz.js의 completeQuiz 함수를 오버라이드
+            window.completeQuiz = async function() {
+                // 정답 개수 계산
+                const correctCount = quizData.answers.filter(answer => answer && answer.isCorrect).length;
+                const totalCount = quizData.answers.filter(answer => !!answer).length;
+                const score = Math.round((correctCount / totalCount) * 100);
+
+                // 소요 시간 계산 (초 단위)
+                const endTime = Date.now();
+                const elapsedMs = quizData.startTime ? (endTime - quizData.startTime) : 0;
+                const elapsedSeconds = Math.round(elapsedMs / 1000);
+                
+                // 레벨 테스트는 서버에 결과를 저장하지 않고 바로 결과 화면으로 이동
+                window.location.href = `/test/level-result?correct=${correctCount}&total=${totalCount}&score=${score}&time=${elapsedSeconds}`;
+            };
+        });
+
+        // 완료 모달 닫기 함수 수정 - 결과 화면으로 이동 (혹시 모를 경우를 위해)
+        function closeCompletionModal() {
+            const modal = document.getElementById('completion-modal');
+            const correctCount = parseInt(document.getElementById('completion-correct-count').textContent) || 0;
+            const totalCount = parseInt(document.getElementById('completion-total-count').textContent) || 0;
+            const score = parseInt(document.getElementById('completion-score').textContent) || 0;
+            const timeText = document.getElementById('completion-time').textContent;
+            const elapsedSeconds = parseInt(timeText.replace(/[^0-9]/g, '')) || 0;
+            
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // 결과 화면으로 이동 (URL 파라미터로 결과 전달)
+            window.location.href = `/test/level-result?correct=${correctCount}&total=${totalCount}&score=${score}&time=${elapsedSeconds}`;
+        }
+    </script>
+</body>
+</html>

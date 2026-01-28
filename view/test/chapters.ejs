@@ -56,6 +56,14 @@
         .chapter-card:active {
             transform: translateY(-2px);
         }
+        
+        /* 선택된 관심사 챕터 강조 스타일 */
+        .chapter-card.selected-interest {
+            border: 2px solid #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+        }
+        
     </style>
 </head>
 <body class="min-h-screen">
@@ -106,23 +114,61 @@
                 return;
             }
 
-            container.innerHTML = chapters.map((chapter, index) => {
+            // 디버깅: 챕터 데이터 구조 확인
+            console.log('챕터 데이터:', chapters);
+            if (chapters.length > 0) {
+                console.log('첫 번째 챕터 구조:', chapters[0]);
+            }
+
+            // 세션 스토리지에서 선택된 관심사 가져오기
+            const selectedInterestsStr = sessionStorage.getItem('selectedInterests');
+            const selectedInterests = selectedInterestsStr ? JSON.parse(selectedInterestsStr) : [];
+            
+            // 챕터를 선택된 관심사와 그 외로 분리
+            const selectedChapters = [];
+            const otherChapters = [];
+            
+            chapters.forEach((chapter, index) => {
+                // id 필드 확인 (id 또는 Id 등 다양한 케이스 대응)
+                const chapterId = chapter.id || chapter.Id || chapter.ID;
+                
+                if (!chapterId) {
+                    console.error('챕터 ID가 없습니다:', chapter);
+                    return;
+                }
+                
                 const chapterNumber = index + 1;
-                // convertCamelcase가 snake_case를 camelCase로 변환하므로 camelCase로 접근
+                const isSelected = selectedInterests.includes(chapterId);
+                
+                if (isSelected) {
+                    selectedChapters.push({ ...chapter, id: chapterId, chapterNumber, isSelected });
+                } else {
+                    otherChapters.push({ ...chapter, id: chapterId, chapterNumber, isSelected });
+                }
+            });
+            
+            // 선택된 챕터를 먼저, 그 다음 나머지 챕터
+            const sortedChapters = [...selectedChapters, ...otherChapters];
+            
+            container.innerHTML = sortedChapters.map((chapter) => {
                 const questionCount = chapter.questionCount || 0;
                 const chapterTitle = chapter.chapterTitle || '';
                 const chapterDescription = chapter.chapterDescription || '';
+                const isSelected = chapter.isSelected || false;
+                const chapterId = chapter.id || chapter.Id || chapter.ID;
                 
-                // 디버깅: 데이터 확인
-                console.log('챕터 데이터:', chapter);
+                if (!chapterId) {
+                    console.error('챕터 ID가 없습니다:', chapter);
+                    return '';
+                }
                 
                 return `
-                    <div class="chapter-card bg-white rounded-2xl p-6 shadow-md cursor-pointer" 
-                         onclick="selectChapter(${chapter.id})">
+                    <div class="chapter-card bg-white rounded-2xl p-6 shadow-md cursor-pointer ${isSelected ? 'selected-interest' : ''}" 
+                         onclick="selectChapter(${chapterId})">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1">
                                 <h2 class="text-xl font-bold text-gray-800 mb-1">
-                                    [제 ${chapterNumber}장] ${chapterTitle}
+                                    [제 ${chapter.chapterNumber}장] ${chapterTitle}
                                 </h2>
                                 <p class="text-sm text-gray-500 leading-relaxed">
                                     ${chapterDescription}

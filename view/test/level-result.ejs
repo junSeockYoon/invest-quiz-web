@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQ Level Test - 레벨 테스트 결과</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 웹에서도 모바일처럼 보이도록 설정 */
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -30px) rotate(5deg); }
+        }
+        
+        /* 메인 컨텐츠를 배경 위에 표시 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 결과 카드 애니메이션 */
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-card {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        /* 등급 배지 스타일 */
+        .grade-badge {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0 auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .grade-s { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; }
+        .grade-a { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
+        .grade-b { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .grade-c { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
+        .grade-d { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Container -->
+    <div class="main-content flex flex-col min-h-screen px-6 py-8">
+        
+        <!-- 헤더 -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">레벨 테스트 결과</h1>
+            <p class="text-gray-600">당신의 투자 지능을 확인하세요</p>
+        </header>
+
+        <!-- 결과 카드 -->
+        <div class="result-card bg-white rounded-3xl p-8 shadow-xl mb-6">
+            <!-- 등급 배지 -->
+            <div id="grade-badge" class="grade-badge mb-6">
+                <span id="grade-text">-</span>
+            </div>
+            
+            <!-- 결과 정보 -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">정답 개수</span>
+                    <span class="font-bold text-xl">
+                        <span id="correct-count" class="text-green-600">0</span>
+                        /<span id="total-count" class="text-gray-800">0</span>
+                    </span>
+                </div>
+                
+                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">정답률</span>
+                    <span id="score-percentage" class="font-bold text-xl text-blue-600">0%</span>
+                </div>
+                
+                <div class="flex justify-between items-center py-3">
+                    <span class="text-gray-600 font-medium">소요 시간</span>
+                    <span id="elapsed-time" class="font-bold text-xl text-gray-800">0초</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 다음 단계 버튼 (하단 고정) -->
+        <button 
+            id="next-button"
+            onclick="goToInterests()"
+            class="mt-auto w-full py-5 px-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-lg rounded-2xl shadow-md flex items-center justify-center gap-3 hover:opacity-90 transition-all"
+        >
+            <span>관심사 선택하러 가기</span>
+            <span class="text-xl">→</span>
+        </button>
+
+    </div>
+
+    <script>
+        // URL 파라미터에서 결과 데이터 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const correctCount = parseInt(urlParams.get('correct') || '0');
+        const totalCount = parseInt(urlParams.get('total') || '5');
+        const score = parseInt(urlParams.get('score') || '0');
+        const elapsedSeconds = parseInt(urlParams.get('time') || '0');
+
+        // 등급 계산
+        function calculateGrade(score) {
+            if (score >= 90) return { grade: 'S', class: 'grade-s' };
+            if (score >= 80) return { grade: 'A', class: 'grade-a' };
+            if (score >= 70) return { grade: 'B', class: 'grade-b' };
+            if (score >= 60) return { grade: 'C', class: 'grade-c' };
+            return { grade: 'D', class: 'grade-d' };
+        }
+
+        // 결과 표시
+        document.addEventListener('DOMContentLoaded', function() {
+            const gradeInfo = calculateGrade(score);
+            
+            // 등급 배지 설정
+            const gradeBadge = document.getElementById('grade-badge');
+            const gradeText = document.getElementById('grade-text');
+            gradeBadge.className = `grade-badge ${gradeInfo.class} mb-6`;
+            gradeText.textContent = gradeInfo.grade;
+            
+            // 결과 정보 표시
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('score-percentage').textContent = score + '%';
+            document.getElementById('elapsed-time').textContent = elapsedSeconds + '초';
+        });
+
+        // 관심사 선택 페이지로 이동
+        function goToInterests() {
+            window.location.href = '/test/interests';
+        }
+    </script>
+</body>
+</html>
